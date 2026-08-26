@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "appthen-extension dev",
+    "doctor": "appthen-extension doctor",
+    "test": "appthen-extension test",
+    "validate": "appthen-extension validate",
+    "build": "appthen-extension build",
+    "pack": "appthen-extension pack",
+    "publish": "appthen-extension publish"
+  },
+  "dependencies": {
+    "@appthen/vibe-workspace": "^0.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "vite": "^6.2.0",
+    "typescript": "~5.8.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

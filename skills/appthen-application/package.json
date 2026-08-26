@@ -1,0 +1,12 @@
+{
+  "name": "appthen-application",
+  "version": "0.1.0",
+  "description": "Build AppThen applications and pages by writing TSX into the remote project-space VFS via the AppThen CLI, waiting for automatic runtime build, and returning a runner link for in-browser verification.",
+  "keywords": ["appthen", "vfs", "application", "page", "skill"],
+  "license": "MIT",
+  "files": [
+    "SKILL.md",
+    "agents",
+    "references"
+  ]
+}

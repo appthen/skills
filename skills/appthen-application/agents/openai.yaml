@@ -1,0 +1,4 @@
+interface:
+  display_name: "AppThen VFS 界面开发"
+  short_description: "通过 AppThen VFS 写 TSX 并获取可调试运行链接。"
+  default_prompt: "使用 $appthen-application，通过 AppThen CLI 写入远程 TSX 页面，等待自动 runtime build，并返回可在浏览器打开的运行链接。"

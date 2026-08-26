@@ -1,0 +1,29 @@
+{
+  "id": "acme.sales",
+  "label": "Acme 销售",
+  "type": "dark",
+  "extends": "vercel",
+  "colors": {
+    "workbench.background": "#101820",
+    "editor.background": "#101820",
+    "editor.foreground": "#f4f7fa",
+    "sideBar.background": "#17232d",
+    "activityBar.background": "#0d141a",
+    "button.background": "#2f9e8f",
+    "input.background": "#1d2b35",
+    "panel.border": "#2b414d"
+  },
+  "portalColors": {
+    "primary": "#2f9e8f",
+    "primary-hover": "#48b6a5",
+    "card": "#17232d"
+  },
+  "monaco": {
+    "base": "vs-dark",
+    "colors": {
+      "editor.background": "#101820",
+      "editor.foreground": "#f4f7fa"
+    },
+    "rules": []
+  }
+}

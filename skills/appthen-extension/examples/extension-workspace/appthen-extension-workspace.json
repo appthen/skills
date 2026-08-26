@@ -1,0 +1,20 @@
+{
+  "extensionsDir": "extensions",
+  "devWorkbench": {
+    "tenantId": "local-tenant",
+    "workbenchId": "local-extension-dev",
+    "name": "Local Extension Dev",
+    "theme": "acme.sales",
+    "enabledExtensionIds": [
+      "acme.workbench-kit",
+      "acme.remote-html-sandbox",
+      "mengti.graph-modeling-studio"
+    ]
+  },
+  "actor": {
+    "subjectId": "local-subject",
+    "subjectClassId": "developer",
+    "userId": "local-user",
+    "role": "admin"
+  }
+}

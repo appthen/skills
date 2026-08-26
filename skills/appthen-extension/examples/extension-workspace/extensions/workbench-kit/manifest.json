@@ -1,0 +1,47 @@
+{
+  "id": "acme.workbench-kit",
+  "name": "工作台工具包示例",
+  "version": "0.1.0",
+  "manifestVersion": 1,
+  "apiVersion": "1",
+  "icon": "data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"%3E%3Crect width=\"32\" height=\"32\" rx=\"7\" fill=\"%232f9e8f\"/%3E%3Cpath d=\"M8 9h16v4H8zm0 6h10v4H8zm0 6h16v4H8z\" fill=\"white\"/%3E%3C/svg%3E",
+  "main": "./src/index.tsx",
+  "sourceType": "umd",
+  "runtime": {
+    "sidebarViewId": "sidebar.acme.workbench-kit",
+    "autoActivate": true
+  },
+  "mcp": {
+    "enabled": true,
+    "uiResources": [
+      {
+        "uri": "ui://acme.workbench-kit/starter-card",
+        "name": "起手式卡片区块",
+        "description": "由本地扩展提供的可复用卡片区块。",
+        "mimeType": "text/html",
+        "content": "<section data-block=\"starter-card\">工作台起手式卡片</section>",
+        "metadata": {
+          "capabilities": [
+            "展示",
+            "起手式"
+          ]
+        }
+      }
+    ],
+    "frontendTools": [
+      {
+        "name": "starter.echo",
+        "description": "回显本地扩展收到的输入数据。",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "handlerRef": "echo"
+      }
+    ]
+  }
+}

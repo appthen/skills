@@ -1,0 +1,6 @@
+.DS_Store
+_user_meta.json
+node_modules
+*.log
+.appthen/build
+.appthen/dev-workbench/dist
