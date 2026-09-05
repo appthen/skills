@@ -98,6 +98,7 @@ Rules:
 - Return cleanup functions from registrations and subscriptions.
 - Use small SVG data URLs or HTTPS image URLs for icons; do not assume relative package assets are available at runtime.
 - Keep `runtime.autoActivate` off unless the extension must register a startup capability.
+- The activity-bar entry comes only from `runtime.sidebarViewId`; an installed extension without it stays invisible by design. Capability-only extensions (canvas nodes, editor providers, no home surface) must set `runtime.autoActivate: true` so they activate without an entry.
 - Treat `manifestVersion: 1`, `apiVersion: "1"`, and `sourceType: "umd"` as the current stable contract.
 
 ### 3. Register capabilities

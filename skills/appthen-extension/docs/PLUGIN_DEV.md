@@ -111,8 +111,8 @@ pnpm pack -- acme.example
 - `main`：源码开发时指向入口；`build` 后会自动改成 bundle 入口。
 - `manifestVersion` / `apiVersion`：当前都必须分别是 `1` 和 `"1"`。
 - `sourceType`：当前稳定运行时使用 `umd`。
-- `runtime.sidebarViewId`：声明扩展侧边栏视图。
-- `runtime.autoActivate`：只用于必须在 Workbench 启动时注册的扩展能力，普通扩展不要开启。
+- `runtime.sidebarViewId`：声明扩展侧边栏视图；它同时也是活动栏入口的唯一来源——未声明该字段的扩展不会出现在活动栏，`installed` 只表示挂载、不产生入口。
+- `runtime.autoActivate`：只用于必须在 Workbench 启动时注册的扩展能力，普通扩展不要开启；纯能力型扩展（无模块首页，见 §5「能力型扩展」）必须开启它，否则挂载后没有任何激活触发点，能力不会生效。
 - `accessPolicy`：声明扩展自身的访问策略，会与租户和工作台策略合并。
 - `icon`：侧边栏和移动端导航图标。v1 使用小型 `data:image/svg+xml` 或 HTTPS 图片 URL；暂不支持从扩展包引用相对路径静态资源。
 
@@ -169,6 +169,29 @@ ctx.views.openEditor({
   props: { filter: 'active' },
 });
 ```
+
+### 能力型扩展（无模块首页）
+
+有些扩展不提供业务首页，只向 Workbench 注册能力：画布节点类型、编辑器 provider、菜单贡献等（例如思维导图节点、流程画布节点）。这类扩展的形态是：
+
+- manifest 不声明 `runtime.sidebarViewId`，因此不出现在活动栏、不占用入口，挂载后静默提供能力；
+- 必须声明 `runtime.autoActivate: true`，否则没有可点击的入口，能力永远不会被激活；
+- `activate` 里只注册能力，不注册侧边栏视图。
+
+```json
+{
+  "id": "acme.canvas-nodes",
+  "name": "Acme Canvas Nodes",
+  "version": "0.1.0",
+  "manifestVersion": 1,
+  "apiVersion": "1",
+  "main": "./src/index.tsx",
+  "sourceType": "umd",
+  "runtime": { "autoActivate": true }
+}
+```
+
+有完整业务面的扩展不要用这个模式：模块主面板应注册为侧边栏视图（模块首页），否则用户没有任何途径进入模块。
 
 ## 6. 稳定 API
 
@@ -323,3 +346,14 @@ pnpm doctor
 ### 扩展按钮闪烁或重复请求
 
 确认扩展没有在每次组件渲染时重复注册能力，`activate` 只注册一次，切换 Workbench 面板时复用已有实例。
+
+### 本地调试加入后扩展面板空白或无入口
+
+本地调试（`pnpm serve` → 扩展管理「本地调试」→ 加入工作台）依赖 serve 清单透传 manifest 的 `runtime` 字段。两种情况会出现空白或无入口：
+
+- 声明是旧清单时期加入的，缺少 `runtime`：在「本地调试」面板中移除后重新加入，声明即带上最新 `runtime`；
+- 扩展本身是能力型扩展（无 `sidebarViewId`），本就不该有入口：属于预期行为，见 §5「能力型扩展」。
+
+### 修改 manifest 后 serve 不生效
+
+`pnpm serve` 的 watch 只监听源码变更，不监听 `manifest.json`。修改 manifest（尤其是 `runtime` 字段）后必须重启 serve，再到扩展管理「本地调试」中移除并重新加入该扩展，新声明才会反映更新后的 `runtime`。
