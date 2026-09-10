@@ -109,6 +109,8 @@ Use public APIs only:
 - `ctx.capabilities.registerEditorView`
 - `ctx.capabilities.registerContribution`
 - `ctx.capabilities.registerFrontendToolHandler`
+- `ctx.capabilities.setSidebarBadge`
+- `ctx.capabilities.setEditorTabBadge`
 - `ctx.views.openEditor` / `ctx.views.closeEditor`
 - `ctx.links.create` / `ctx.links.open`
 - `ctx.runtime` and `ctx.auth`
@@ -283,6 +285,14 @@ pnpm pack
 ```
 
 量化自检命令的结果需要结合场景判断：基础 UI 的硬编码颜色和旧主题变量通常应为 0；品牌色、图表色、游戏或创作画布中的业务色可以保留，但应确认它们没有承担 Workbench 基础 UI 的主题职责。发现动态 Tailwind class 时，改为完整静态 class 或静态映射。
+
+**环境坑（实测）**：
+
+- 工作区脚本叫 `pack` 时，`pnpm pack` 会被 pnpm 内建 pack 劫持（对根 package.json 报
+  `ERR_PNPM_PACKAGE_VERSION_NOT_FOUND`），必须用 `pnpm run pack`。
+- `vibe-workspace/dist/extension-cli` 会被 vibe-workspace 的前端 `pnpm build`（vite build）
+  覆盖掉；丢失时回到 vibe-workspace 跑 `pnpm run build:lib` 重建，再执行扩展工作区命令。
+- `package.json` 里的 `test`/`validate` 等脚本同样建议经 `pnpm run <name>` 调用，避免内建命令抢占。
 
 For a focused extension, pass its ID where supported. Treat these as separate evidence levels:
 

@@ -193,6 +193,34 @@ ctx.views.openEditor({
 
 有完整业务面的扩展不要用这个模式：模块主面板应注册为侧边栏视图（模块首页），否则用户没有任何途径进入模块。
 
+### 扩展 Badge（侧边栏入口与页签提示）
+
+扩展可以给自己的侧边栏入口按钮和编辑器页签设置 badge（数字、短文本或圆点提示）。badge 只能挂在扩展自己注册的视图上，跨视图写入会被静默忽略：
+
+```tsx
+import type { ExtensionBadge } from '@appthen/vibe-workspace/plugins/base';
+
+// 侧边栏入口（Activity Bar 按钮）显示未读数
+ctx.capabilities.setSidebarBadge({
+  viewId: 'sidebar.acme.example',
+  badge: { count: 5 },
+});
+
+// 编辑器页签显示圆点/文本提示；key 必须与 openEditor 时传的 key 一致
+// （宿主会对 key 做统一规范化：字母数字与 :_- 以外的字符替换为 _，
+//   因此 key 建议只使用字母数字、冒号、下划线、连字符）
+ctx.capabilities.setEditorTabBadge({
+  viewId: 'editor.acme.example.members',
+  key: 'members',
+  badge: { dot: true, tone: 'warning' },
+});
+
+// 清除：badge 传 null，或调用返回的 dispose
+ctx.capabilities.setSidebarBadge({ viewId: 'sidebar.acme.example', badge: null });
+```
+
+`ExtensionBadge` 支持 `count`（>99 显示 `99+`，0 视为不显示）、`text`（建议 ≤4 字符）、`dot`（圆点）、`tone`（`default` 跟随主题 badge 色，另有 `danger` / `warning` / `success` / `info`）。同一入口重复设置会覆盖旧值；扩展停用后宿主负责清理其 badge。
+
 ## 6. 稳定 API
 
 优先使用以下 API：
@@ -201,6 +229,8 @@ ctx.views.openEditor({
 - `ctx.capabilities.registerEditorView`
 - `ctx.capabilities.registerContribution`
 - `ctx.capabilities.registerFrontendToolHandler`
+- `ctx.capabilities.setSidebarBadge`
+- `ctx.capabilities.setEditorTabBadge`
 - `ctx.views.openEditor`
 - `ctx.views.closeEditor`
 - `ctx.links.create`

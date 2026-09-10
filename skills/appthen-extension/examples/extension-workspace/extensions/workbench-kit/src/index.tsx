@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import type { PluginContext } from '@appthen/vibe-workspace/plugins/base';
+import type { ExtensionBadge, PluginContext } from '@appthen/vibe-workspace/plugins/base';
 import {
   CodingButton,
   CodingInput,
@@ -39,6 +39,7 @@ const VIEW_REGRESSION = 'editor.acme.workbench-kit.regression';
 const VIEW_OVERLAY_GUIDE = 'editor.acme.workbench-kit.overlay-guide';
 const VIEW_RESPONSIVE_WORKSPACE = 'editor.acme.workbench-kit.responsive-workspace';
 const VIEW_CODING_TEMPLATE = 'editor.acme.workbench-kit.coding-template';
+const SIDEBAR_VIEW_ID = 'sidebar.acme.workbench-kit';
 
 let openApiGalleryTab: () => void = () => undefined;
 let openEditorTab: (viewId: string, title: string, props?: Record<string, unknown>) => void = () => undefined;
@@ -256,6 +257,33 @@ function OverlayGuideView({ onClose }: { onClose?: () => void }) {
   );
 }
 
+// === 扩展 Badge 演示 ===
+// setSidebarBadge 作用于 Activity Bar 入口按钮，setEditorTabBadge 作用于本扩展打开的编辑器页签。
+function BadgeDemoSection() {
+  const setSidebarBadge = (badge: ExtensionBadge | null) => {
+    kitContext?.capabilities.setSidebarBadge({ viewId: SIDEBAR_VIEW_ID, badge });
+  };
+  const setTabBadge = (badge: ExtensionBadge | null) => {
+    kitContext?.capabilities.setEditorTabBadge({ viewId: VIEW_API_GALLERY, key: VIEW_API_GALLERY, badge });
+  };
+
+  return (
+    <section style={{ ...cardStyle, marginTop: 12 }}>
+      <strong>Badge 提示</strong>
+      <p style={{ margin: '6px 0 10px', fontSize: 12, ...mutedStyle }}>
+        setSidebarBadge 提示左侧 Activity Bar 入口按钮，setEditorTabBadge 提示本扩展打开的页签；传 null 清除，扩展停用时宿主自动清理。
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <button type="button" style={buttonStyle} onClick={() => setSidebarBadge({ count: 128 })}>侧边栏入口 · 数字</button>
+        <button type="button" style={buttonStyle} onClick={() => setSidebarBadge({ text: '新', tone: 'info' })}>侧边栏入口 · 文本</button>
+        <button type="button" style={buttonStyle} onClick={() => setSidebarBadge({ dot: true, tone: 'success' })}>侧边栏入口 · 圆点</button>
+        <button type="button" style={buttonStyle} onClick={() => setTabBadge({ count: 3, tone: 'warning' })}>当前页签 · 数字</button>
+        <button type="button" style={buttonStyle} onClick={() => { setSidebarBadge(null); setTabBadge(null); }}>全部清除</button>
+      </div>
+    </section>
+  );
+}
+
 function MainView({ onClose }: { onClose?: () => void }) {
   return (
     <div style={mainStyle}>
@@ -274,6 +302,7 @@ function MainView({ onClose }: { onClose?: () => void }) {
         <BlockCard title="贡献点">通过 ctx.capabilities.registerContribution 注册顶部栏、资源管理器或自定义贡献。</BlockCard>
         <BlockCard title="UI 资源">通过 manifest.mcp.uiResources 暴露可复用 UI 资源，为后续平台共享做准备。</BlockCard>
       </div>
+      <BadgeDemoSection />
     </div>
   );
 }
@@ -671,7 +700,7 @@ export function activate(ctx: PluginContext) {
 
   const disposers = [
     ctx.capabilities.registerSidebarView({
-      id: 'sidebar.acme.workbench-kit',
+      id: SIDEBAR_VIEW_ID,
       title: '工作台工具包',
       component: Sidebar,
     }),
