@@ -40,6 +40,7 @@ pnpm pack
 - 不要给 `WorkbenchDrawerContent` 添加 `fixed`、`absolute`、`bottom-*`、`right-*`、`top-*`、`left-*` 或 `translate-*` 定位类；定位和响应式切换由宿主组件负责。
 - 如果修改了 SDK 的 overlay 或样式，扩展调试前先在 SDK 目录运行 `pnpm run build:lib`，确保 `dist/vibe-workspace.css` 与 `dist` 中的运行时代码同步。
 - 抽屉内容区使用 `min-h-0 flex-1 overflow-y-auto`，表单和操作区使用显式 `gap`，输入控件限制 `min-width: 0; max-width: 100%`。
+- 控件高度吃平台默认档（Button/Input 默认 32px，平台 Chrome 28px）；不要在扩展 CSS 里写全局高度覆盖，特殊尺寸用 `size="sm"/"lg"` 显式传。完整尺度体系见 SDK 技能的 `docs/UI-CONTRACT.md`。
 - 不要在代码或提交记录中写入访问 Token。
 
 ## 完成标准

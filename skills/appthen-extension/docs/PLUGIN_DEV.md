@@ -292,6 +292,7 @@ const link = ctx.links.createAbsolute({
 - 基础 UI 从 `@appthen/vibe-workspace/ui` 引入 `Workbench` 前缀组件；不要从 `src/components/ui` 或其他宿主内部路径导入。
 - 面向 Coding 风格的企业协作扩展可从 `@appthen/vibe-workspace/coding-kit` 引入 `Coding*` primitives/patterns，并同时引入 `@appthen/vibe-workspace/styles.css`，在业务根节点使用 `.coding-kit`。
 - 公共组件、模板和验证标准以 [`docs/UI-CONTRACT.md`](docs/UI-CONTRACT.md) 为准，Workbench Kit 负责提供可运行示例。
+- 控件高度吃平台默认档：Button/Input/Select 默认 32px（工作台密集 UI 尺度，平台 Chrome 为 28px），需要更大时显式 `size="lg"`（40px）。不要在扩展 CSS 里写全局控件高度覆盖；完整尺度体系与主题变量规则见 [`docs/UI-CONTRACT.md`](docs/UI-CONTRACT.md)。
 - `WorkbenchDrawerContent side="right"` 在桌面端从右侧打开，在移动端默认切换为底部半屏；只有确有需要时才通过 `mobileSide` 覆盖方向。
 - 抽屉内容区使用 `min-h-0 flex-1 overflow-y-auto`，标题和操作区保持 `shrink-0`，避免内容挤出边界。
 - 表单字段组和操作按钮组必须显式使用 `gap-2` / `gap-3` / `gap-4`；不要依赖相邻元素默认产生间距。

@@ -1,0 +1,8 @@
+{
+  "name": "appthen-resource-picker",
+  "version": "0.1.0",
+  "description": "用「静态表单控件 + 抽屉资源列表」范式，为任意业务资源（用户、优惠券、产品、订单等）快速制造单选/多选选择器。Use when the user wants a resource picker/selector in a form, or a new business resource needs single/multiple selection with search, filters, disabled reasons, and archived-data retrieval.",
+  "keywords": ["appthen", "resource-picker", "selector", "form", "drawer", "skill"],
+  "license": "MIT",
+  "files": ["SKILL.md", "references", "templates"]
+}
