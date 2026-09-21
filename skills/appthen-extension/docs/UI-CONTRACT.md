@@ -54,3 +54,25 @@
 - "粗暴主义/极繁/复古未来等大胆美学方向"——工作台美学方向已锁定"专业密集 B2B"，差异化靠 §1.8 的构图推导，不靠美学流派。
 
 > 该技能自带的检索工具（`scripts/search.py`，配色/字体/UX 数据集）可用于**平台主题与门户页**的设计调研；工作台扩展开发用不到。
+
+## 6. 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界）
+
+扩展 UI 只允许一条技术路线：**SDK 组件 + Tailwind 语义原子类 + 业务件 cva 变体**。`acme.service-project` 是该路线的参照实现（WorkbenchDrawer/Dialog + 原子类 + 少量业务 CSS）。
+
+### 6.1 组件三规则
+
+1. **SDK 有 → 直接用**。`@appthen/vibe-workspace/{components,ui,overlay}` 已提供的组件（Button、Input、Alert、Skeleton、SimpleSelect、Checkbox、Switch、DropdownMenu、Pagination、WorkbenchDialog、WorkbenchDrawer 等），禁止在扩展内重写同功能组件——哪怕只差一个 className。
+2. **SDK 缺 → 上提**。两个及以上扩展用得上的能力，先在 vibe-workspace 增补并随 SDK 发布，扩展不得复制私有实现；仅本扩展的业务语义件（KpiCard、状态 Badge、tone 卡片）才留在扩展内。
+3. **业务语义件 → cva 变体**。b2b-ui-ux §1.2（KPI 卡四层结构）、§1.4（浅底深字 tag）、§1.6（tint 渐变卡公式）的视觉公式以 class-variance-authority variant 承载（如 `KpiCard tone="primary|success|warning|danger"`），不写成扩展 CSS 规则。
+
+### 6.2 样式承载
+
+- 颜色一律 Tailwind 语义类，由宿主 `tailwind.config` 桥接 `--portal-*`（`bg-background`、`text-sub`、`bg-success`、`text-tier-vip`…）；语义色清单（success/warning/danger/tier-* 等）由 vibe-workspace 维护，扩展缺色先提 SDK，不发明 hex，不新增 `--crm-*`/`--xxx-*` 私有 token。
+- **扩展不新增独立 `.css` 文件**（例外：reset、keyframes、滚动条、复杂伪元素等 Tailwind 长尾，且必须按业务域分文件）。
+- 布局用原子类 + 既有断点（`<768px` 移动，见 §3）；容器宽度驱动的响应（如筛选栏常驻断点）用 ResizeObserver 判定容器宽度传 props，不用媒体查询猜测容器。
+- **结构红线**（存量扩展同样适用）：单组件文件 > 300 行、或单组件 useState > 5 → 必须拆分（按状态域抽自定义 hook；Dialog/Drawer 开关状态收敛为单个 `dialog: { type, payload } | null`，禁止 N 个布尔并存）；CSS 按业务域分文件，禁止全扩展单文件。
+
+### 6.3 案例记录
+
+- **反例 `acme.customer-management`（CRM）**：自 CordysCRM 参考实现移植，带来 2044 行单文件 CSS 与 7 个自建基础组件（Select/Checkbox/Switch/Badge/Pagination/DropdownMenu/Controls，其中 5 个与 SDK 职责重叠）；SDK 的 72 个 `--ck-*` token 缺口由扩展内 340 行桥接 CSS 补齐。正确路径是 token 缺口进宿主 tailwind/config（一次）、组件能力上提 SDK（一次），而不是每个扩展各自吸收基建。存量迁移顺序：home → list → detail/其他域，迁移时同步完成状态域拆分与 Dialog 状态收敛。
+- **正例 `acme.service-project`**：SDK 组件 + Tailwind 原子类 + 约 700 行按域组织的业务 CSS；抽屉滚动布局（§3 `min-h-0 flex-1 overflow-y-auto` 契约）即出自该扩展的返工教训。

@@ -44,6 +44,8 @@ B2B 数据页面的"高级感"来自**有控制的色彩层级 + 数字排版 + 
 - 大数字用 `font-variant-numeric: tabular-nums`；趋势上涨用成功色/下跌用危险色（业务语义相反时颠倒，如成本）。
 - 3-4 张一组等宽排布；卡片 `bg-card` + `border-border` + 小圆角，不要加粗边框。
 
+> 实现约定：本节与 §1.4/§1.6 的视觉公式以 cva variant 承载（`tone="primary|success|warning|danger"`），不写成扩展 CSS 规则，见 UI-CONTRACT.md §6。
+
 ### 1.3 快捷入口网格
 
 高频功能入口用 2×2 或 4 列图标块网格：图标块（浅功能色底 + 图标）+ 下方 12px 标签。这与 KPI 卡的图标块同一语言，形成页面一致性。

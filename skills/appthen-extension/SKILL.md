@@ -29,7 +29,7 @@ Read these files when needed:
 按场景渐进加载参考资料，不要把所有参考资料当成默认硬性模板：
 
 - 实现 UI 前，读取通用质量基线 [ui-design-quality.md](../appthen-application/references/ui-design-quality.md)。
-- 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约。
+- 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线）同样是强制契约。
 - 当扩展明显属于企业管理、运营后台、专业工作台或数据密集型 B2B 场景时，再读取 [references/b2b-ui-ux.md](references/b2b-ui-ux.md)。
 - **用户显式点名使用 B2B 规范/后台风格时视为强匹配**：读取后结构范式与视觉表达（KPI 统计卡、状态 tag、图表套路、主色贯穿）都要落实，实现后对照其自检清单检查，不要降级成"只保证结构可用"。
 - 用户未点名但场景匹配时，采用结构范式并至少做到视觉色彩层级（状态有色、数字有排版），同时说明采用了 B2B 风格；匹配度不确定时向用户询问风格定位（专业管理工作台 / 数据驾驶舱 / 轻量品牌页）。
