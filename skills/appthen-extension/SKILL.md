@@ -187,7 +187,7 @@ Tailwind 只是样式写法，不会自动让扩展适配 Workbench 主题。所
 - ✅ 主题相关 class 必须是完整静态 class，例如 `bg-primary`、`text-muted-foreground`；不要用字符串拼接生成 Tailwind class，避免编译器无法扫描
 - ⚠️ 数据可视化、品牌色、游戏棋子或创作画布等确实不属于全局 UI 语义的颜色，可以使用业务色，但要集中定义、说明用途，并确保页面基础层和交互控件仍跟随主题
 - ❌ 不要使用 `dark:bg-*` 代替主题系统；Workbench 主题不一定只有亮色和暗色，主题切换也不一定通过 `.dark` 完成
-- ❌ 不要直接使用 `--vscode-*`、`--portal-*` 或扩展自行创建的全局颜色变量作为普通 UI 颜色来源
+- ❌ 不要使用 `--vscode-*` 等宿主遗留变量；不要**定义/覆盖**任何主题 token（`--ck-*`、`--portal-*`、shadcn 变量一律只消费不定义，详见 UI-CONTRACT §2 硬规则）；`--portal-*` 调色板按 UI-CONTRACT §6.2 用任意值消费是合法路径
 - ❌ 不要写 `bg-[${color}]`、`text-${status}-500` 或 `className={condition ? 'bg-blue-500' : 'bg-red-500'}` 这类不可控的动态颜色 class；使用静态映射对象或语义 variant
 
 **主题验收**(推荐执行，不应阻塞开发):
@@ -278,8 +278,10 @@ CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 pnpm doctor
 
 # 将 <extension-dir> 替换为本次扩展目录；也可直接检查整个 extensions 目录
-find extensions/<extension-dir> -type f \( -name '*.ts' -o -name '*.tsx' -o -name 'manifest.json' \) -print0 \\
-  | xargs -0 grep -nE '#[0-9a-fA-F]{3,8}|rgba\\(|var\\(--vscode-|var\\(--portal-|dark:bg-|dark:text-'
+find extensions/<extension-dir> -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.css' -o -name 'manifest.json' \) -print0 \\
+  | xargs -0 grep -nE '#[0-9a-fA-F]{3,8}|rgba\\(|var\\(--vscode-|var\\(--border-light|dark:bg-|dark:text-'
+# 主题 token 定义硬门禁（应为 0，见 UI-CONTRACT §2）：
+grep -rnE '^\s*--[a-z][a-z0-9-]*\s*:' extensions/<extension-dir>/src
 
 pnpm validate
 pnpm test
@@ -296,6 +298,13 @@ pnpm pack
 - `vibe-workspace/dist/extension-cli` 会被 vibe-workspace 的前端 `pnpm build`（vite build）
   覆盖掉；丢失时回到 vibe-workspace 跑 `pnpm run build:lib` 重建，再执行扩展工作区命令。
 - `package.json` 里的 `test`/`validate` 等脚本同样建议经 `pnpm run <name>` 调用，避免内建命令抢占。
+- **类型检查兜底配方**（CLI 不可用时的独立 tsc 校验，实测可行）：扩展通常没有自己的
+  tsconfig.json，直调 tsc 会踩 `@types/react@19 + moduleResolution bundler` 的解析怪癖
+  （TS7016/TS7026 级联上百条假错误）。解法：在扩展目录放临时 `tsconfig.check.json`——
+  `moduleResolution: "bundler"` + `jsx: "react-jsx"` + `noUnusedLocals`，`typeRoots` 与
+  `paths` 显式映射到 `.pnpm/@types+react@19.2.18/node_modules/@types/*`（react、react/jsx-runtime、
+  react-dom 三个都要），并加 `"@appthen/vibe-workspace/*": ["../../node_modules/@appthen/vibe-workspace/dist/*"]`，
+  然后跑 `node <workbench>/node_modules/typescript/bin/tsc -p tsconfig.check.json`。校验完删除临时配置。
 
 For a focused extension, pass its ID where supported. Treat these as separate evidence levels:
 

@@ -21,9 +21,16 @@
 
 ## 2. 主题变量
 
+- **扩展不得定义任何主题 token（硬规则，零例外）**。扩展 CSS/TSX 的 `:root` 或任何选择器中不得出现 `--ck-*`、`--portal-*`、shadcn（`--background`/`--primary`…）或任何 `--xxx-*` 颜色变量的**定义**。宿主运行时已提供全套（shadcn 语义层 + 19 个 `--portal-*` 调色板 + `--ck-*` 几何/语义全集）；`acme.service-project` 全程 0 个 token 定义即为实证。历史上 CRM 曾以"补全 SDK 组件所需 `--ck-*` 全集"为由写出 133 行桥接 CSS——那是重复病不是补洞，SDK 组件的 token 由宿主注入，扩展不存在"缺 token"问题。
+- 消费方式：shadcn 语义类（`bg-background`/`text-foreground`/`bg-muted`/`text-muted-foreground`…，SDK 构建产物已含）优先；`--portal-*` 调色板（bg/card/ink/body/sub/fill/border(-hover)/primary(-hover,-light)/success/warning/danger 等）用 Tailwind 任意值消费（`bg-[var(--portal-success)]`）；浅色底/悬停底用 `color-mix(in srgb, var(--portal-danger) 16%, var(--portal-card))` 由语义色派生，不发明新变量名。
 - 优先使用 shadcn 语义层（`--foreground` / `--card` / `--border` / `--muted-foreground`）和 `--portal-*` 层；它们随主题正确联动。
 - `index.css :root` 中的 `--border-light`、`--text-primary`、`--accent-*`、`--hover-*` 是旧仪表盘深色主题的遗留硬编码：`--border-light` 运行时已由 themeService 派生自当前主题 `panel.border`，其余仍是深色值，**浅色主题下不要直接依赖**。
 - 业务代码不得读取 `ctx.runtime.tenantId` 做分支；租户信息一律来自自有后端会话（shared/auth-client）。
+- 自检门禁（新增扩展必跑，输出必须为 0）：
+  ```bash
+  grep -rnE '^\s*--[a-z][a-z0-9-]*\s*:' extensions/<extension-dir>/src   # token 定义: 应为 0
+  grep -rnE 'var\(--vscode-|var\(--border-light|var\(--text-primary' extensions/<extension-dir>/src   # 遗留变量: 应为 0
+  ```
 
 ## 3. 布局与断点
 
@@ -67,12 +74,13 @@
 
 ### 6.2 样式承载
 
-- 颜色一律 Tailwind 语义类，由宿主 `tailwind.config` 桥接 `--portal-*`（`bg-background`、`text-sub`、`bg-success`、`text-tier-vip`…）；语义色清单（success/warning/danger/tier-* 等）由 vibe-workspace 维护，扩展缺色先提 SDK，不发明 hex，不新增 `--crm-*`/`--xxx-*` 私有 token。
+- 颜色一律走主题（**实测 2026-09**，以构建产物为准）：shadcn 语义类（`bg-background`、`text-foreground`、`bg-muted`、`text-muted-foreground`、`bg-card`、`border-border`…）在 SDK CSS 中真实存在，优先用；`--portal-*` 调色板（success/warning/danger/primary/sub/fill 等 19 个变量）用 Tailwind 任意值消费（`bg-[var(--portal-success)]`、`text-[var(--portal-sub)]`）。**注意**：`bg-success`/`text-sub`/`bg-tier-vip` 这类从 `--portal-*` 派生的语义类在当前构建中**不存在**，不要写。
+- 业务级别色没有专属 token（如 VIP/普通/潜在）：映射到语义色（实证先例 types.ts `LEVEL_DOT`：vip=warning、regular=sub、potential=primary），需要新语义色先提 SDK 采纳；不发明 hex，不新增 `--crm-*`/`--xxx-*` 私有 token，也**不得定义任何既有命名空间 token（§2 硬规则）**。
 - **扩展不新增独立 `.css` 文件**（例外：reset、keyframes、滚动条、复杂伪元素等 Tailwind 长尾，且必须按业务域分文件）。
 - 布局用原子类 + 既有断点（`<768px` 移动，见 §3）；容器宽度驱动的响应（如筛选栏常驻断点）用 ResizeObserver 判定容器宽度传 props，不用媒体查询猜测容器。
 - **结构红线**（存量扩展同样适用）：单组件文件 > 300 行、或单组件 useState > 5 → 必须拆分（按状态域抽自定义 hook；Dialog/Drawer 开关状态收敛为单个 `dialog: { type, payload } | null`，禁止 N 个布尔并存）；CSS 按业务域分文件，禁止全扩展单文件。
 
 ### 6.3 案例记录
 
-- **反例 `acme.customer-management`（CRM）**：自 CordysCRM 参考实现移植，带来 2044 行单文件 CSS 与 7 个自建基础组件（Select/Checkbox/Switch/Badge/Pagination/DropdownMenu/Controls，其中 5 个与 SDK 职责重叠）；SDK 的 72 个 `--ck-*` token 缺口由扩展内 340 行桥接 CSS 补齐。正确路径是 token 缺口进宿主 tailwind/config（一次）、组件能力上提 SDK（一次），而不是每个扩展各自吸收基建。存量迁移顺序：home → list → detail/其他域，迁移时同步完成状态域拆分与 Dialog 状态收敛。
+- **反例 `acme.customer-management`（CRM）**：自 CordysCRM 参考实现移植，带来 2044 行单文件 CSS 与 7 个自建基础组件（Select/Checkbox/Switch/Badge/Pagination/DropdownMenu/Controls，其中 5 个与 SDK 职责重叠）；更以"补全 SDK 组件所需 `--ck-*` 全集"为由自建 133 行 token 桥（83 个 `--ck-*` + 23 个 shadcn 定义）。**终审结论（2026-09）**：桥是重复病不是补洞——宿主运行时已提供全套 token（service-project 0 个定义即为实证），桥已整块删除并清零全部自定义定义；桥外引用的 `--portal-danger-bg`/`--portal-tier-*` 等 SDK 不存在的变量改用 color-mix 派生与语义映射。教训：判断"缺 token"前先 grep 宿主/SDK 构建产物，别信扩展自己的桥。正确路径是组件能力上提 SDK（一次）、缺色提 SDK（一次），而不是每个扩展各自吸收基建。存量迁移顺序：home → list → detail/其他域，迁移时同步完成状态域拆分与 Dialog 状态收敛。
 - **正例 `acme.service-project`**：SDK 组件 + Tailwind 原子类 + 约 700 行按域组织的业务 CSS；抽屉滚动布局（§3 `min-h-0 flex-1 overflow-y-auto` 契约）即出自该扩展的返工教训。
