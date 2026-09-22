@@ -377,7 +377,7 @@ Before declaring an extension complete, confirm:
 - Copied URLs restore the extension and resource after refresh.
 - Desktop, narrow tablet, and phone layouts were checked.
 - Dialogs, drawers, forms, icons, themes, loading, empty, and error states follow the host contract.
-- **容器语义检查**（UI-CONTRACT §7）：主面板是模块 App 首页而非入口菜单页；首屏三问（有真实状态 / 有直达动作 / 零假入口）全过；列表或为应用主体、或 ≤1/3 首屏且 ≤320px；降到移动端 30% 抽屉档位仍成立。
+- **容器语义检查**（UI-CONTRACT §7）：主面板是模块 App 首页而非入口菜单页；首屏三问（有真实状态 / 有直达动作 / 零假入口）全过；**主面板每一节过了 §7.7 四问**（谓词 / 动作必过，增量 / 命中加分——固定前 N 条的"已启用项目"式镜像列表必删）；列表或为应用主体、或 ≤1/3 首屏且 ≤320px；降到移动端 30% 抽屉档位仍成立。
 - **Theme/Tailwind implementation checked** (§5.1): 使用语义主题 token，未用 `dark:` 冒充主题适配，动态 class 可被编译；有现成工具时推荐补充浅色、深色及必要的品牌主题切换验证，不因缺少工具阻塞交付。
 - **UI/UX quality baseline checked** (§5.5): 产品视觉、交互、多端适配和状态验收已完成；没有把样例扩展当成唯一模板。
 - Publish, install, and Workbench mounting were verified as separate steps.
