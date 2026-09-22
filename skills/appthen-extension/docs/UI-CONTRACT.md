@@ -66,7 +66,8 @@
 
 - **可交互必有反馈**：所有可点击元素（卡片、行、chip、入口块）必须有稳定 hover 态（背景/边框/色相变化 + `cursor: pointer`）；hover 不用 scale/位移等会改变布局的变换。
 - **微交互时长**：140~300ms 的 CSS transition（背景/边框/透明度/阴影）；入场动画用 staggered reveal 且只播一次，禁止常驻动画。
-- **对比度**：正文与关键数字对底色 ≥ 4.5:1；muted 文字只承载辅助信息，不承载状态；浅色/深色主题都要过一遍。
+- **对比度**：正文与关键数字对底色 ≥ 4.5:1；muted 文字只承载辅助信息，不承载状态；浅色/深色主题都要过一遍。同色调浅底上的同色调文字另见 §6.4 的混色规则（原色调直接当字色只有 ~2.9:1）。
+- **色彩层级（不得整屏灰）**：合规清理只保证"没有错的颜色"，不保证"有用的颜色"。交付前自查：把界面所有颜色去掉后层级是否仍成立（结构 OK）；把界面看成**一整块灰色**时是否只剩灰阶（则色彩体系缺失）。状态 / 度量 / 关键数字必须有语义色锚点，做法见 §6.4 色调范式。
 - **数字排版**：所有指标数字 `font-variant-numeric: tabular-nums`；单位缩小一档。
 - **图标**：一律 SVG 图标库（lucide），禁止 emoji 当图标。
 - **三态齐全**：空态（带下一步 CTA）、加载骨架、失败重试，缺一不可。
@@ -97,10 +98,78 @@
 - 布局用原子类 + 既有断点（`<768px` 移动，见 §3）；容器宽度驱动的响应（如筛选栏常驻断点）用 ResizeObserver 判定容器宽度传 props，不用媒体查询猜测容器。
 - **结构红线**（存量扩展同样适用）：单组件文件 > 300 行、或单组件 useState > 5 → 必须拆分（按状态域抽自定义 hook；Dialog/Drawer 开关状态收敛为单个 `dialog: { type, payload } | null`，禁止 N 个布尔并存）；CSS 按业务域分文件，禁止全扩展单文件。
 
+### 6.4 色调范式（`--sp-tone`）—— 合规之后怎么把颜色真正用起来
+
+> 背景：`acme.service-project` 在完成合规清理（去掉违规色、统一圆角字号）后仍被判定"太素、像黑白电视"。
+> 根因不是违规，是**合规 ≠ 有色彩体系**：清理只保证"没有错的颜色"，不保证"有用的颜色"。本节补上后者。
+
+- **颜色承载语义，不做装饰**。约定的语义映射：
+  绿=就绪可用 / 琥珀=待处理需介入 / 红=破坏性 / 蓝=主体量与主操作 / 灰=归档与无状态。
+  反例警示：给"分类目录"这种**无状态度量**上色会让 KPI 区四个数看起来同级同质——该中性就必须中性。
+  "颜色不够用"时不要硬凑：只有 4 个色相家族（primary/success/warning/danger），
+  分类色（categorical，如入口分组）与状态色（status）**不得混用同一屏**，否则语义冲突。
+
+- **色调范式**：一个元素只声明一个局部变量 `--sp-tone`，其余属性全部由它派生：
+
+  ```css
+  .sp-kpi__cell { --sp-tone: var(--primary);
+    border: 1px solid color-mix(in srgb, var(--sp-tone) 24%, transparent);
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--sp-tone) 14%, var(--card)) 0%,
+      color-mix(in srgb, var(--sp-tone) 4%, var(--card)) 100%); }
+  .sp-kpi__cell--success { --sp-tone: var(--portal-success); }
+  ```
+  换色调只改一个类，不会出现"边框改了底色没改"的漏改。`--sp-tone: var(--portal-x)` 是
+  **`var()` 别名**，不引入新色源，不违反 §2。
+
+- **对比度规则（同色调浅底上写同色调文字，最容易糊）**：
+  | 用途 | 写法 |
+  |---|---|
+  | 非文字图形（圆点 / 竖条） | 直接用 `var(--sp-tone)` |
+  | 大号数字（20px，压在同色调 14% 浅底） | `color-mix(in srgb, var(--sp-tone) 82%, var(--foreground))` |
+  | 小号文字（≤13px） | `color-mix(in srgb, var(--sp-tone) 75%, var(--foreground))` |
+
+  实测：`--portal-warning`（浅色主题 `#b98216`）直接当数字色时，与它自己的 14% 浅底只有 **2.9:1**，
+  不达 3:1。混入 `--foreground` 后浅色主题自动压暗、深色主题自动提亮，**一套写法两个主题都达标，
+  无需任何 `[data-theme]` 分支**。
+
+- **`--portal-*` 键的可用范围**：只使用明暗两套默认集都存在的键（`bg/card/fill/border/border-hover/
+  sidebar/sidebar-border/title/body/sub/disabled/primary/primary-light/primary-hover/success/
+  warning/danger/danger-bg/shadow/ink`）。`tier-vip`/`tier-regular`/`tier-potential` **只存在于
+  dark 默认集**，light 主题下是空值，用了会静默失效（证据：SDK `Workbench-*.js` 的
+  `DefaultLightPortalColors` 无这三个键）。`--portal-info` 亦不在默认集中。
+
+- **别用共享 variant 表达业务状态**：`badgeVariants` 只有 `default/secondary/destructive/outline`
+  四个**通用**槽位，且 `outline` 连底色都没有（只有 `text-foreground`，无 `background`）。
+  用 `outline` 表达"已启用"，列表里就变成**一整列灰字**——这正是"黑白电视"的直接来源之一。
+  正确做法：基座仍用 `<Badge variant="outline">` 拿圆角/内距/字号，配色由扩展类接管
+  （扩展 CSS 未分层 → 稳压 `@layer utilities`，无需 `!important`）：
+
+  ```tsx
+  <Badge variant="outline" className={`sp-pill sp-pill--${tone}`}>
+    <i className="sp-pill__dot" aria-hidden="true" />{label}
+  </Badge>
+  ```
+
+- **消灭"假编码"**：旧实现里"规则动作分布"画了 5 个**同色**圆点做图例 —— 颜色不区分任何东西的
+  图例等于没有图例。要么让颜色真的分组（动作作用域：表单域 / 样品 / 计价 → 蓝 / 绿 / 琥珀），
+  要么去掉圆点改用 chip 底色承载。同类自查：任何"图例 / 色标 / 分面"都必须能回答"这个颜色在区分什么"。
+
+- **行内操作要按后果着色**：启用=绿、停用=琥珀（可逆降级）、删除=红（不可恢复）。
+  三个操作全是同一款灰 outline 时，使用者要靠读字才知道哪个点下去有后果。
+  共享 `Button` 的 `destructive` variant 是**实心红块**，表格行内太重，用 `variant="outline"` +
+  扩展类 `sp-btn-danger`（`color: color-mix(destructive 78%, foreground)`）。
+
+- **提交前自检**：把 UI 截图去色后如果层级还成立，说明结构没问题；把 UI 截图**看成一整块灰色**，
+  说明色彩体系缺失——回到本节。
+
 ### 6.3 案例记录
 
 - **反例 `acme.customer-management`（CRM）**：自 CordysCRM 参考实现移植，带来 2044 行单文件 CSS 与 7 个自建基础组件（Select/Checkbox/Switch/Badge/Pagination/DropdownMenu/Controls，其中 5 个与 SDK 职责重叠）；更以"补全 SDK 组件所需 `--ck-*` 全集"为由自建 133 行 token 桥（83 个 `--ck-*` + 23 个 shadcn 定义）。**终审结论（2026-09）**：桥是重复病不是补洞——宿主运行时已提供全套 token（service-project 0 个定义即为实证），桥已整块删除并清零全部自定义定义；桥外引用的 `--portal-danger-bg`/`--portal-tier-*` 等 SDK 不存在的变量改用 color-mix 派生与语义映射。教训：判断"缺 token"前先 grep 宿主/SDK 构建产物，别信扩展自己的桥。正确路径是组件能力上提 SDK（一次）、缺色提 SDK（一次），而不是每个扩展各自吸收基建。存量迁移顺序：home → list → detail/其他域，迁移时同步完成状态域拆分与 Dialog 状态收敛。
-- **正例 `acme.service-project`**：SDK 组件 + Tailwind 原子类 + 抽屉滚动布局（§3 `min-h-0 flex-1 overflow-y-auto` 契约）即出自该扩展的返工教训。**但（2026-09-22 实测）它的 CSS 已达 72.9KB / 3425 行、并含 11 个 token 定义**，按 §2/§6.2 属存量违规，需按域迁移；它的正例身份只覆盖"组件选择 + 抽屉布局"，不代表 CSS 承载方式可效仿。
+- **正例 `acme.service-project`**：SDK 组件 + Tailwind 原子类 + 抽屉滚动布局（§3 `min-h-0 flex-1 overflow-y-auto` 契约）即出自该扩展的返工教训。**更正（2026-09-22 复核，v0 结论有两处失准）**：
+  - ~~"11 个 token 定义"~~ 是旧版 `audit-extensions.cjs` 的判定口径过宽（把 `var()` 别名也计入）。按现行口径（§2「是否引入新色源」）实测 `tokDefs=33 / tokDefsColored=0` —— 33 个定义**全部是 `var()` 别名**（如 `--sp-tone: var(--portal-primary)`），**色源定义 0 个，不构成 §2 违规**；`hardColors=9` 全部落在 `designer/designer.css` 与 `form-preview/form-preview.css`（业务状态色，§6.3 白名单项）。
+  - 仍然成立的是**体量**问题：87.7KB / 3811 行 CSS 偏大，`designer.css` 单文件即占大半，应按业务域拆分迁移。
+  - 它的正例身份覆盖"组件选择 + 抽屉布局 + 色调范式（§6.4）"，**不包括 CSS 单文件承载方式**。
 
 ---
 
