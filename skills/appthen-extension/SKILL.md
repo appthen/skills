@@ -29,7 +29,7 @@ Read these files when needed:
 按场景渐进加载参考资料，不要把所有参考资料当成默认硬性模板：
 
 - 实现 UI 前，读取通用质量基线 [ui-design-quality.md](../appthen-application/references/ui-design-quality.md)。
-- 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线）同样是强制契约。
+- 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线）、**§7 容器语义与首屏价值（主面板＝模块 App 首页、判定式三问、槽位制、列表判据、移动端三档）同样是强制契约**。
 - 当扩展明显属于企业管理、运营后台、专业工作台或数据密集型 B2B 场景时，再读取 [references/b2b-ui-ux.md](references/b2b-ui-ux.md)。
 - **用户显式点名使用 B2B 规范/后台风格时视为强匹配**：读取后结构范式与视觉表达（KPI 统计卡、状态 tag、图表套路、主色贯穿）都要落实，实现后对照其自检清单检查，不要降级成"只保证结构可用"。
 - 用户未点名但场景匹配时，采用结构范式并至少做到视觉色彩层级（状态有色、数字有排版），同时说明采用了 B2B 风格；匹配度不确定时向用户询问风格定位（专业管理工作台 / 数据驾驶舱 / 轻量品牌页）。
@@ -223,11 +223,11 @@ Tailwind 只是样式写法，不会自动让扩展适配 Workbench 主题。所
 
 ### 5.6 信息架构与容器选择（产品原则，不是模板）
 
-先理解模块的工作目标、用户频率、信息密度和设备场景，再决定容器。下面是帮助 Agent 做判断的产品原则，不要求所有扩展长成同一个样子。
+**先读 UI-CONTRACT §7（强制契约）**：扩展 = 模块，主面板 = 模块的 App 首页，工作区 = 常规业务页面；首屏价值判定式三问必须全过。下面的表帮助判断容器，不替代 §7。
 
 | 容器 | 更适合承载 | 需要警惕 |
 | --- | --- | --- |
-| 模块主面板（当前通常注册为 Sidebar view） | 数据概览、菜单入口、数据摘要、待办、快捷动作，以及一部分最有价值的数据列表 | 不能退化成一个“点击这里打开某某某”的按钮页；打开后应立即给出模块最直接、最有价值的信息 |
+| 模块主面板（当前通常注册为 Sidebar view） | 模块当前状态（真实数据/进度）、需优先关注的内容、直达动作 | 退化成"点击这里打开某某"的入口页；把 B 端 KPI 模板套到所有场景 |
 | Editor 主面板 | 可持续浏览的列表、搜索、筛选、排序、分页、批量操作、数据对比和统计 | 不要把所有内容都强行拆成 Editor；主面板本身就是模块的第一工作台 |
 | Dialog | 确认、警告、删除、短流程、少量字段编辑，用户需要立刻完成或取消 | 长详情、长表单、多步骤流程不适合 Dialog |
 | Drawer | 单条记录详情、上下文辅助编辑、筛选条件，以及不打断当前任务的中等复杂操作 | 不要让 Drawer 变成完整业务主页或跨步骤主流程 |
@@ -354,6 +354,7 @@ Before declaring an extension complete, confirm:
 - Copied URLs restore the extension and resource after refresh.
 - Desktop, narrow tablet, and phone layouts were checked.
 - Dialogs, drawers, forms, icons, themes, loading, empty, and error states follow the host contract.
+- **容器语义检查**（UI-CONTRACT §7）：主面板是模块 App 首页而非入口菜单页；首屏三问（有真实状态 / 有直达动作 / 零假入口）全过；列表或为应用主体、或 ≤1/3 首屏且 ≤320px；降到移动端 30% 抽屉档位仍成立。
 - **Theme/Tailwind implementation checked** (§5.1): 使用语义主题 token，未用 `dark:` 冒充主题适配，动态 class 可被编译；有现成工具时推荐补充浅色、深色及必要的品牌主题切换验证，不因缺少工具阻塞交付。
 - **UI/UX quality baseline checked** (§5.5): 产品视觉、交互、多端适配和状态验收已完成；没有把样例扩展当成唯一模板。
 - Publish, install, and Workbench mounting were verified as separate steps.
