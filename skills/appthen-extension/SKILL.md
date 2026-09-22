@@ -29,7 +29,7 @@ Read these files when needed:
 按场景渐进加载参考资料，不要把所有参考资料当成默认硬性模板：
 
 - 实现 UI 前，读取通用质量基线 [ui-design-quality.md](../appthen-application/references/ui-design-quality.md)。
-- 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线）、**§7 容器语义与首屏价值（主面板＝模块 App 首页、判定式三问、槽位制、列表判据、移动端三档）同样是强制契约**。
+- 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§5 视觉质量与微交互基线（含「色彩层级：不得整屏灰」门禁）、§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线、**§6.4 色调范式 —— 合规之后怎么把颜色真正用起来**）、**§7 容器语义与首屏价值（主面板＝模块 App 首页、判定式三问、槽位制、列表判据、移动端三档）同样是强制契约**。
 - 当扩展明显属于企业管理、运营后台、专业工作台或数据密集型 B2B 场景时，再读取 [references/b2b-ui-ux.md](references/b2b-ui-ux.md)。
 - **用户显式点名使用 B2B 规范/后台风格时视为强匹配**：读取后结构范式与视觉表达（KPI 统计卡、状态 tag、图表套路、主色贯穿）都要落实，实现后对照其自检清单检查，不要降级成"只保证结构可用"。
 - 用户未点名但场景匹配时，采用结构范式并至少做到视觉色彩层级（状态有色、数字有排版），同时说明采用了 B2B 风格；匹配度不确定时向用户询问风格定位（专业管理工作台 / 数据驾驶舱 / 轻量品牌页）。
@@ -182,7 +182,7 @@ Tailwind 只是样式写法，不会自动让扩展适配 Workbench 主题。所
 
 - ✅ 页面底色使用 `bg-background`，正文使用 `text-foreground`，卡片使用 `bg-card text-card-foreground`，边框使用 `border-border`
 - ✅ 次要信息使用 `text-muted-foreground`，弱背景使用 `bg-muted`，悬停或选中使用 `bg-accent`，主要动作使用 `bg-primary text-primary-foreground`
-- ✅ 语义状态优先使用共享 `Badge` 的 `variant`；需要业务状态色时，将状态映射到语义 token，不要直接写颜色值
+- ✅ 业务状态色走**色调范式**（UI-CONTRACT §6.4）：`--sp-tone: var(--portal-xxx)` 局部变量 + `color-mix` 派生边框/底/字色，`var()` 别名不算违规；不要直接把状态塞进共享 `Badge` 的通用 `variant`（`outline` 没底色、`secondary` 只有灰底 → 状态列会变成一排灰字）
 - ✅ 业务专属 CSS 使用 `var(--background)`、`var(--foreground)`、`var(--primary)` 等语义变量；复杂组件可通过 `hsl(var(--...))` 或现有主题变量接入
 - ✅ 主题相关 class 必须是完整静态 class，例如 `bg-primary`、`text-muted-foreground`；不要用字符串拼接生成 Tailwind class，避免编译器无法扫描
 - ⚠️ 数据可视化、品牌色、游戏棋子或创作画布等确实不属于全局 UI 语义的颜色，可以使用业务色，但要集中定义、说明用途，并确保页面基础层和交互控件仍跟随主题
@@ -199,11 +199,26 @@ Tailwind 只是样式写法，不会自动让扩展适配 Workbench 主题。所
 
 **28 件 components/ui 元件**(必须熟悉):Button / Input / Textarea / Select / Checkbox / Switch / RadioGroup / Dialog / Drawer / Badge / DotBadge / Card / Alert / EmptyState / Progress / Skeleton / Separator / SimpleSelect / Accordion / Avatar / Breadcrumb / Command / ScrollArea / Sheet / Table / Tabs / Toast / Tooltip。
 
-**状态徽章映射**(不许用 `rgba` 背景):
-- 待处理 → `<Badge variant="outline">`
-- 处理中 → `<Badge variant="secondary">`
-- 已完成 → `<Badge variant="default">`
-- 失败 → `<Badge variant="destructive">`
+**状态徽章映射**(不许用 `rgba` 背景；**先读 UI-CONTRACT §6.4**)：
+
+⚠️ 旧版本节让"待处理 → `<Badge variant="outline">`"，**这是错的**：`badgeVariants` 只有
+default / secondary / destructive / outline 四个**通用**槽位，其中 `outline` 连底色都没有
+（只有 `text-foreground`，无 `background`），`secondary` 只有一层灰底 —— 照抄的结果是
+状态列变成**一排灰字**（"黑白电视"的直接来源）。
+
+正确做法：**色调范式**。基座仍用共享 Badge（拿圆角/内距/字号），配色由扩展类按语义色调接管：
+
+| 状态 | 色调 | 用法 |
+|---|---|---|
+| 就绪 / 已启用 / 成功 | success 绿 | `<Badge variant="outline" className="sp-pill sp-pill--success">` |
+| 待处理 / 草稿 / 警告 | warning 琥珀 | `… sp-pill--warning` |
+| 失败 / 危险 | danger 红 | `… sp-pill--danger` |
+| 归档 / 已停用 / 无状态 | neutral 灰 | `… sp-pill--neutral` |
+| 默认 / 主体量 | primary 蓝 | `… sp-pill--primary` |
+
+`variant="default|destructive"` 是**实心块**，只适合极少数强提示位；表格 / 列表里的状态一律走
+上面的浅底深字丸（`background: color-mix(tone 13%, var(--card))` + `color: color-mix(tone 75%, var(--foreground))`）。
+带一枚 6px 圆点可让一列状态**可扫读**（形状先于文字被人眼捕获）。
 
 **反 "AI 味" 铁律**(任一命中立刻改):
 - ❌ 极光渐变光斑 + 玻璃拟态 (`backdrop-blur`) — AI 生成界面最典型套路
@@ -213,6 +228,7 @@ Tailwind 只是样式写法，不会自动让扩展适配 Workbench 主题。所
 
 **产品质量检查清单**(提交前逐条):
 - [ ] **视觉**: 默认优先采用 `shadcn + Tailwind` 和语义化 utility classes，颜色、排版、间距、圆角、图标和层级形成一致且符合业务的视觉语言；确有业务理由时允许使用定制 CSS；避免默认模板感和纯装饰堆砌
+- [ ] **色彩层级（不得整屏灰）**: 合规清理只保证"没有错的颜色"，不保证"有用的颜色"。逐项确认：状态有语义色（绿/琥珀/红）、关键数字有色调锚点、行内危险操作与普通操作可区分；把界面看成一整块灰色时若只剩灰阶，说明色彩体系缺失 → 按 UI-CONTRACT §6.4 补色调范式。同时反向自查：无状态度量（如"分类目录"计数）**不要**上色，颜色一律承载语义
 - [ ] **UX**: 首屏价值明确、即时反馈、表单失焦校验、空/错/边界态都有 (EmptyState + CTA、可重试、A11y 键盘 + focus ring)、危险操作 Dialog 二次确认、上下文保留(路由可分享)；小游戏、创作、媒体等非办公扩展按自身玩法或创作流程验收，不套用后台数据页面模板
 - [ ] **多端**: 需要多端使用的扩展明确考虑不同设备的任务差异、信息密度、触控、列表呈现和容器切换；办公类尤其需要检查桌面与移动端，不以“桌面布局缩小后不溢出”作为唯一验收标准
 - [ ] **量化自检**:
