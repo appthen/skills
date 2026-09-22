@@ -28,6 +28,8 @@ Read these files when needed:
 
 按场景渐进加载参考资料，不要把所有参考资料当成默认硬性模板：
 
+- **接到"把某业务系统／模块做成扩展"的需求时，先读 [docs/PRE-DEV-INTERROGATION.md](docs/PRE-DEV-INTERROGATION.md) 并跑完立项前拷问审查**：先读业务文档 → **后端代码**（实体/字段注释/枚举/**索引**/DTO）→ 现有前端 → 平台契约，再用五个拷问（该不该存在 / 有没有意义 / 缺什么 / 是不是真的 / 代价多大）产出**质疑 · 缺口 · 增量**三张清单，按 A/B/C 成本分级。**每一条意见必须带证据（文件／行号／字段名），禁止打钩式评审。** 未通过审查不得进入界面设计。
+
 - 实现 UI 前，读取通用质量基线 [ui-design-quality.md](../appthen-application/references/ui-design-quality.md)。
 - 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§5 视觉质量与微交互基线（含「色彩层级：不得整屏灰」门禁）、§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线、**§6.4 色调范式 —— 合规之后怎么把颜色真正用起来**）、**§7 容器语义与首屏价值（主面板＝模块 App 首页、判定式三问、槽位制、列表判据、移动端三档）同样是强制契约**。
 - 当扩展明显属于企业管理、运营后台、专业工作台或数据密集型 B2B 场景时，再读取 [references/b2b-ui-ux.md](references/b2b-ui-ux.md)。
@@ -38,6 +40,20 @@ Read these files when needed:
 - 不要为了执行参考资源而额外安装浏览器、截图工具或其他工具；验证工具只在已有时推荐使用。
 
 ## Standard Workflow
+
+### 0. Interrogate before designing（立项前拷问审查，不可跳过）
+
+只要任务的输入是"一个已有的业务系统／业务模块"，在写第一行前端代码之前跑一次
+[docs/PRE-DEV-INTERROGATION.md](docs/PRE-DEV-INTERROGATION.md)：
+
+1. **先读，读完再提问**：业务文档（想要什么）→ **后端代码**（事实是什么：实体／字段注释／枚举／索引／DTO／校验）→ 现有前端（已做到哪）→ 平台契约（底线）。
+2. **五个拷问，逐条带证据**：该不该存在（谓词）／有没有意义（下一个动作）／缺什么（字段·模型·接口·写路径）／是不是真的（**写入路径**）／代价多大（只增不改能否解决）。
+3. **产出三张清单**：质疑清单（交需求方确认）· 缺口清单 · 增量清单（后两张按成本分级）。
+4. **成本分级定"不过分"**：A 档（数据已存在且接口已返回，只是没消费）进本次；B 档（需新增只读聚合接口）记账排期；C 档（需改数据模型／有口径争议）**不进本次**，先出定义文档。
+5. **角色边界**：我们管"能不能／值不值／代价多大"，**产品意义由业务方判**。出证据、出选项、给建议，不替对方拍板。
+
+⚠️ 纪律：**无证据的意见不进报告**；**没有写入路径的字段不许进 UI**（先验证谁写、何时写、历史数据怎么办）。
+未通过审查（缺口未识别／写路径未验／C 档混进本次）**不得进入界面设计**。
 
 ### 1. Prepare the workspace
 
@@ -370,6 +386,7 @@ Use host logs such as activation, registration, route restoration, and runtime-c
 
 Before declaring an extension complete, confirm:
 
+- **前置审查已通过**（PRE-DEV-INTERROGATION §7）：质疑／缺口／增量三张清单齐备且**每条带证据**；C 档项已排除并登记；字段写入路径已验证；需求方对 A 档范围明确点头。
 - `pnpm doctor`, `pnpm validate`, `pnpm test`, `pnpm build`, and `pnpm pack` pass.
 - The extension runs in the offline Workbench with HMR.
 - Public APIs are used and all registrations have cleanup functions.
