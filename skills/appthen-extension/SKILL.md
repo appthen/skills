@@ -301,10 +301,17 @@ pnpm pack
 - **类型检查兜底配方**（CLI 不可用时的独立 tsc 校验，实测可行）：扩展通常没有自己的
   tsconfig.json，直调 tsc 会踩 `@types/react@19 + moduleResolution bundler` 的解析怪癖
   （TS7016/TS7026 级联上百条假错误）。解法：在扩展目录放临时 `tsconfig.check.json`——
-  `moduleResolution: "bundler"` + `jsx: "react-jsx"` + `noUnusedLocals`，`typeRoots` 与
-  `paths` 显式映射到 `.pnpm/@types+react@19.2.18/node_modules/@types/*`（react、react/jsx-runtime、
-  react-dom 三个都要），并加 `"@appthen/vibe-workspace/*": ["../../node_modules/@appthen/vibe-workspace/dist/*"]`，
-  然后跑 `node <workbench>/node_modules/typescript/bin/tsc -p tsconfig.check.json`。校验完删除临时配置。
+  `moduleResolution: "Bundler"` + `jsx: "react-jsx"` + `strict` + `allowJs: true` + `checkJs: false`
+  （后者让迁移来的 `.jsx` 不刷错误），`types: []`，并显式映射：
+  `paths` 里 `react` / `react/jsx-runtime` / `react/jsx-dev-runtime` / `react-dom` / `react-dom/client`
+  都要分别指到 `.pnpm/@types+react@19.2.18/node_modules/@types/react/**.d.ts`（**指到具体 .d.ts 文件**，
+  不要只指目录），`baseUrl: "."`。
+  ⚠️ **最容易踩的坑：路径基数是 tsconfig 所在目录，不是工作区根。** 扩展位于
+  `<workbench>/extensions/<id>/`，所以到工作区 node_modules 要写 `../../node_modules/...`
+  （只写 `../` 会静默落空 → `paths` 被忽略 → 又回到 TS7016 级联，极易误判成"配方失效"）。
+  然后跑 `node <workbench>/node_modules/.bin/tsc -p tsconfig.check.json`。校验完删除临时配置。
+  判据：**扩展自有 `.tsx` 无新增错误**即可；对未定型 `.jsx` 组件的属性推断报错
+  （TS2322 `not assignable to 'never'`）与 `shared/` 里第三方库 API 报错属存量噪音，不算回归。
 
 For a focused extension, pass its ID where supported. Treat these as separate evidence levels:
 

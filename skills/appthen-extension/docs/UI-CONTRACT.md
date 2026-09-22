@@ -24,13 +24,30 @@
 - **扩展不得定义任何主题 token（硬规则，零例外）**。扩展 CSS/TSX 的 `:root` 或任何选择器中不得出现 `--ck-*`、`--portal-*`、shadcn（`--background`/`--primary`…）或任何 `--xxx-*` 颜色变量的**定义**。宿主运行时已提供全套（shadcn 语义层 + 19 个 `--portal-*` 调色板 + `--ck-*` 几何/语义全集）；`acme.service-project` 全程 0 个 token 定义即为实证。历史上 CRM 曾以"补全 SDK 组件所需 `--ck-*` 全集"为由写出 133 行桥接 CSS——那是重复病不是补洞，SDK 组件的 token 由宿主注入，扩展不存在"缺 token"问题。
 - 消费方式：shadcn 语义类（`bg-background`/`text-foreground`/`bg-muted`/`text-muted-foreground`…，SDK 构建产物已含）优先；`--portal-*` 调色板（bg/card/ink/body/sub/fill/border(-hover)/primary(-hover,-light)/success/warning/danger 等）用 Tailwind 任意值消费（`bg-[var(--portal-success)]`）；浅色底/悬停底用 `color-mix(in srgb, var(--portal-danger) 16%, var(--portal-card))` 由语义色派生，不发明新变量名。
 - 优先使用 shadcn 语义层（`--foreground` / `--card` / `--border` / `--muted-foreground`）和 `--portal-*` 层；它们随主题正确联动。
+- ⚠️ **分层优先级陷阱**：扩展自有 CSS 是**未分层**（unlayered）的，而 Tailwind 工具类在 `@layer utilities`
+  里 —— 未分层规则优先级**高于**任何 `@layer`。因此当同一个属性既有扩展类（如 `.sp-sec__empty { padding: … }`）
+  又补了 Tailwind 原子类（`px-3 py-2`）时，**原子类会静默失效**。
+  规则：扩展类已管辖的属性（padding / font-size / border-radius…）要改就用**修饰类**
+  （`.sp-sec__empty--inset`），不要指望用 Tailwind 原子类覆盖；反过来，元素上没有任何扩展类时用 Tailwind 原子类是安全且推荐的。
+  （把 TSX 里的 `style={{...}}` 收敛掉时最容易踩这个坑。）
 - `index.css :root` 中的 `--border-light`、`--text-primary`、`--accent-*`、`--hover-*` 是旧仪表盘深色主题的遗留硬编码：`--border-light` 运行时已由 themeService 派生自当前主题 `panel.border`，其余仍是深色值，**浅色主题下不要直接依赖**。
 - 业务代码不得读取 `ctx.runtime.tenantId` 做分支；租户信息一律来自自有后端会话（shared/auth-client）。
-- 自检门禁（新增扩展必跑，输出必须为 0）：
+- 自检门禁（新增扩展必跑）：
   ```bash
-  grep -rnE '^\s*--[a-z][a-z0-9-]*\s*:' extensions/<extension-dir>/src   # token 定义: 应为 0
-  grep -rnE 'var\(--vscode-|var\(--border-light|var\(--text-primary' extensions/<extension-dir>/src   # 遗留变量: 应为 0
+  # 1) 硬违规：定义了「色源」（RHS 含 #hex / rgb() / hsl()），扣除 §6 业务状态色白名单后必须为 0
+  grep -rnE '^\s*--[a-z][a-z0-9-]*\s*:\s*(#|rgba?\(|hsla?\()' extensions/<extension-dir>/src
+  # 2) 遗留变量：必须为 0
+  grep -rnE 'var\(--vscode-|var\(--border-light|var\(--text-primary' extensions/<extension-dir>/src
   ```
+- ⚠️ **判定口径是「是否引入新色源」，不是「有没有 `--x:` 这一行」。** 以下三类**不算违规**，不要为了凑
+  "零定义"去删（删了反而丢信息）：
+  - **别名**：RHS 走 `var(...)`，不引入新色源。例：`--reference-border: var(--border)`
+  - **第三方库 API 变量**：库要求宿主注入、且值非颜色。例：`--jse-font-size: 13px`（vanilla-jsoneditor）、`--jse-theme-color: var(--primary)`
+  - **业务状态色白名单**（§6.3）：语义 token 无等价项的状态色。例：`--pt-required`、`--fp-warn-ink`、`--fp-desc`
+  纯数值别名（`--x-space-1: 4px` 这类）虽不违规，但若无引用即为死代码，应删。
+- 同样口径适用于 **TS 侧兜底常量**：`getComputedStyle` 读 token 时的 fallback 若写死 `#c0392b`，
+  那是换了地方的硬编码色。fallback 一律用 `currentColor` / `transparent`，与同函数其他项保持一致
+  （实测反例：`read('--destructive', '#c0392b')` → 改 `read('--destructive', 'currentColor')`）。
 
 ## 3. 布局与断点
 
