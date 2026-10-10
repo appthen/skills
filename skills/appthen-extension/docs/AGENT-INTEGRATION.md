@@ -62,12 +62,13 @@
 要点：
 
 - `serverId` 是注入 key 与审批配置的锚点；`url` / `headers` / `env` 的值可含 `${{ns.key}}` 占位符：
-  - `${{secrets.*}}`：daemon 在调用前向平台 `credentials/resolve` 解引用（值只存密文、不进日志）。**凭证写在该数字成员主体名下**（工作台凭证管理；appId 用扩展 id）。
+  - `${{secrets.*}}`：daemon 在调用前向平台 `credentials/resolve` 解引用（值只存密文、不进日志）。**默认档（`subjectRef`）凭证写在该成员的「创建者」主体名下**（工作台凭证管理；appId 用扩展 id）；写在该数字成员自己名下只有 `identityMode=self` 时才生效——与下方「调用身份三档」一致。
   - `${{subject.*}}`：平台侧解析（如 `subject.tenantId` 注入你的租户头）。
+- **传输/鉴权首期形态受限**：平台当前只注入 `transport: "http"` + `auth: "none" | "static-header"`；`auth: "oauth"` 与 `transport: "stdio-proxy"` 会被跳过（不注入、不报错），按这两类声明会静默失效——接入前先确认形态。
 - **你的 MCP server 必须自证安全**：自行校验 token、按租户头显式过滤；未配 token 建议 fail-closed（整体关闭 + 结构化错误，便于定位）。
 - `requiresConfirmationTools`：即使会话是 auto-allow，被列出的工具也会**强制出审批卡**（用户在会话里点「允许/拒绝」）。
 - **调用身份三档**（成员侧 `identityMode`，key 用注册表 id）：默认 `subjectRef`=成员创建者凭证；`self`=成员自己；`triggerer`=本次触发者。默认档下，把凭证写在与成员创建者一致的主体上最省心。
-- **改声明（url/headers/审批清单）或改凭证会自动生效**：两者的修订号已进 `configFingerprint`——下一条消息触发会话重建（N7 刷新链），无需手工清会话。
+- **改 `mcpServers` 声明（url/headers/审批清单）或改凭证会自动生效**：两者的修订号已进 `configFingerprint`——下一条消息触发会话重建（N7 刷新链），无需手工清会话。注意**仅 `mcpServers` 与凭证进指纹**；`resources` / `cardTemplates` / `skills` 的声明改动不在此列（见 §5）。
 
 后端实现建议（"人做的 AI 也做、行为一致"）：HTTP controller 与 MCP tools 调**同一份 service**；工具返回结构化错误而不是抛栈。
 
@@ -151,7 +152,7 @@ export function CustomerCard({ data, onAction, context }: {
 - 组件契约 `{ data, onAction, context }`；`onAction` 提交 `{ type:'Action.Submit', data:{…} }`。渲染壳（会话流里的消息行容器）由宿主接管，组件只画卡本体。
 - **`dataSchema` 是写给 agent 的填充说明**：字段 `description` 要直接指导填值，并写明空值降级原则（**如实降级为「— / 未安排」等占位，禁止编造**）。平台会把模板 + dataSchema 自动拼进 agent 的 systemPrompt「Extension Cards」段。
 - agent 回发契约（平台已自动教）：`hub.sendMessage` content = `{ kind:'card', cardTemplate:{ templateId, data } }`。
-- 卡内动作（`Action.Submit`）当前分发给**扩展注册的前端工具 handler**（`mcp.frontendTools[].handlerRef` + `ctx.capabilities.registerFrontendToolHandler`）；未注册 handler 时动作会被静默忽略。需要点卡有反馈时：注册 handler，或把动作目的做成资源 `openView`（平台原生消费在推进中，落地前不要依赖）。
+- 卡内动作（`Action.Submit`）当前分发给**扩展注册的前端工具 handler**（`mcp.frontendTools[].handlerRef` + `ctx.capabilities.registerFrontendToolHandler`）；未注册 handler 时动作会被静默忽略（`handled:false`，无网络请求、无报错）。消费方只看 `frontendTools` 是否注册：`frontendTools` 为空即无消费方，而 `mcp.enabled:false` 本身**不会**自动禁用前端工具，别把它当成平台侧闸门。需要点卡有反馈时：注册 handler，或把动作目的做成资源 `openView`（平台原生消费在推进中，落地前不要依赖）。
 - adaptive-card 轨道：`format:"adaptive-card"` + 内联 `template` JSON，适合轻量卡；对复杂度/美观度要求高时优先 react + 共享组件体系。
 
 ### 2.4 skills —— 领域技能
@@ -214,8 +215,8 @@ export function CustomerCard({ data, onAction, context }: {
 |---|---|
 | agent 完全不知道卡片/资源/工具 | 扩展是否已安装且未被收权（有效能力集闸）；用 §4.1 自查法确认 overlay 段 |
 | 手打 @ 没反应 | 必须用提及组件插入 chip |
-| 第三方工具 401 / 403 | `secrets.*` 是否写进**正确主体**；先直连你的 MCP server 自测（对齐 header 格式，勿猜 `Bearer` 前缀） |
+| 第三方工具 401 / 403 | `secrets.*` 是否写进**正确主体**（默认档 = 成员创建者）；先直连你的 MCP server 自测（对齐 header 格式，勿猜 `Bearer` 前缀） |
 | agent 查不到数据（"不存在或无权访问"） | 服务端数据域过滤：服务身份（操作者）与数据归属是否匹配——若按"本人/协作"过滤，用数据所有者当服务身份 |
 | 改了 manifest 没生效 | 安装快照语义（§5）：重装/重加；mcpServers/凭证类改动等一条消息自动重建 |
-| 点卡没反应 | 卡动作 handler 未注册（§2.3 末两条） |
+| 点卡没反应 | 卡动作消费方是扩展注册的前端工具 handler：`frontendTools` 为空或未注册 handler 即静默无响应（CRM 现状 `frontendTools:[]`）；`mcp.enabled:false` 不是平台侧闸门，别误判（§2.3 末两条） |
 | 不该做的事 | 把真实 token 写进 manifest/skill/日志；教 agent 编造数据"绕过"失败 |
