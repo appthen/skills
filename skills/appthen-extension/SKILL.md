@@ -1,6 +1,6 @@
 ---
 name: appthen-extension
-description: 当用户想在 AppThen 工作台里"加一个功能、工具、面板、小插件"，或想把已有界面/能力打包成可安装、可发布的扩展时，使用本技能。典型用户说法："帮我在工作台里加个 XX 功能""做一个侧边栏工具""把这个功能做成能安装的扩展"。用户不需要懂代码或文件结构，交付即可安装、可发布的功能。
+description: 当用户想在 AppThen 工作台里"加一个功能、工具、面板、小插件"，想把已有界面/能力打包成可安装、可发布的扩展，或要把业务模块接给数字成员（agent 可用的 MCP 连接器、领域资源、消息卡片、领域技能）时，使用本技能。典型用户说法："帮我在工作台里加个 XX 功能""做一个侧边栏工具""把这个功能做成能安装的扩展""让 agent 能查/操作我们模块的数据"。用户不需要懂代码或文件结构，交付即可安装、可发布的功能。
 ---
 
 # AppThen Extension Development
@@ -30,6 +30,7 @@ Read these files when needed:
 
 - **接到"把某业务系统／模块做成扩展"的需求时，先读 [docs/PRE-DEV-INTERROGATION.md](docs/PRE-DEV-INTERROGATION.md) 并跑完立项前拷问审查**：先读业务文档 → **后端代码**（实体/字段注释/枚举/**索引**/DTO）→ 现有前端 → 平台契约，再用五个拷问（该不该存在 / 有没有意义 / 缺什么 / 是不是真的 / 代价多大）产出**质疑 · 缺口 · 增量**三张清单，按 A/B/C 成本分级。**每一条意见必须带证据（文件／行号／字段名），禁止打钩式评审。** 未通过审查不得进入界面设计。
 
+- **要把扩展接给数字成员（人 ↔ agent ↔ 业务：外部 MCP 连接器 / 领域资源 / 消息卡片 / 领域技能）时，先读 [docs/AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md)**：五张声明面、平台自动组装（提示词/工具/审批/凭证全部自动，不要手写提示词）、端到端验收剧本与实测坑清单。
 - 实现 UI 前，读取通用质量基线 [ui-design-quality.md](../appthen-application/references/ui-design-quality.md)。
 - 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§5 视觉质量与微交互基线（含「色彩层级：不得整屏灰」门禁）、§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线、**§6.4 色调范式 —— 合规之后怎么把颜色真正用起来**）、**§7 容器语义与首屏价值（主面板＝模块 App 首页、判定式三问、槽位制、列表判据、移动端三档）同样是强制契约**。
 - 当扩展明显属于企业管理、运营后台、专业工作台或数据密集型 B2B 场景时，再读取 [references/b2b-ui-ux.md](references/b2b-ui-ux.md)。
@@ -120,6 +121,20 @@ Rules:
 - Keep `runtime.autoActivate` off unless the extension must register a startup capability.
 - The activity-bar entry comes only from `runtime.sidebarViewId`; an installed extension without it stays invisible by design. Capability-only extensions (canvas nodes, editor providers, no home surface) must set `runtime.autoActivate: true` so they activate without an entry.
 - Treat `manifestVersion: 1`, `apiVersion: "1"`, and `sourceType: "umd"` as the current stable contract.
+
+### 2.5 Agent 能力声明（把业务接给数字成员）
+
+manifest 的 `capabilities` 块描述"这个扩展能给数字成员（agent）什么"，五个面：
+
+- `mcpServers[]`：连你自己的业务 MCP server（agent 读写业务数据；写工具可声明强制审批）；
+- `resources[]`：业务对象资源（@ 引用 / 会话内可点链接 / 可读）；
+- `cardTemplates[]`：消息卡片（react 组件卡优先；组件必须扩展入口顶层导出）；
+- `skills[]`：领域技能（打包时从 `artifactPath` 注入 SKILL.md 内容）；
+- `permissions[]`：安装确认展示的能力说明。
+
+装扩展后平台自动完成：声明聚合 → systemPrompt 追加「Extension Resources / Extension Cards / Extension Skills」段 → mcpServers 直连注入 + 审批卡 → `${{secrets.*}}` 调用前解引用。**不要手写给 agent 的提示词。**
+
+完整字段、可抄样例与端到端验收剧本（"提示词自查 → MCP 取数 → 回卡 → 回资源点开"，含实测坑清单）见 [docs/AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md)。
 
 ### 3. Register capabilities
 
@@ -399,3 +414,4 @@ Before declaring an extension complete, confirm:
 - **Theme/Tailwind implementation checked** (§5.1): 使用语义主题 token，未用 `dark:` 冒充主题适配，动态 class 可被编译；有现成工具时推荐补充浅色、深色及必要的品牌主题切换验证，不因缺少工具阻塞交付。
 - **UI/UX quality baseline checked** (§5.5): 产品视觉、交互、多端适配和状态验收已完成；没有把样例扩展当成唯一模板。
 - Publish, install, and Workbench mounting were verified as separate steps.
+- **若含 agent 能力面（`capabilities.*`）**：按 [AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md) §4 跑通端到端剧本——提示词自查法确认 agent 看得到 templateId / uriTemplate，MCP 取到真实数据，回卡未编造，资源可点开；失败即停，不用注入假消息伪装通过。

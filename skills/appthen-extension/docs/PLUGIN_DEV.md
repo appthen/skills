@@ -104,6 +104,8 @@ pnpm pack -- acme.example
 }
 ```
 
+`mcp` 块用于 MCP Apps / 前端工具；**agent 能力面（外部 MCP 连接器、领域资源、消息卡片、领域技能、权限说明）统一走 `capabilities` 块**——声明后由平台自动聚合注入数字成员，无需手写提示词。字段、样例与端到端验收见 [AGENT-INTEGRATION.md](AGENT-INTEGRATION.md)。
+
 稳定字段：
 
 - `id`：全局稳定扩展 ID，建议使用反向域名格式。
@@ -388,3 +390,7 @@ pnpm doctor
 ### 修改 manifest 后 serve 不生效
 
 `pnpm serve` 的 watch 只监听源码变更，不监听 `manifest.json`。修改 manifest（尤其是 `runtime` 字段）后必须重启 serve，再到扩展管理「本地调试」中移除并重新加入该扩展，新声明才会反映更新后的 `runtime`。
+
+### 会话里 agent 看不到扩展的卡片 / 资源 / 工具
+
+先确认扩展已安装且未被收权（能力面有闸门），再用「提示词自查法」验证声明是否进了 overlay：在会话里 @ 数字成员，问它 system prompt 里有没有 Extension Cards / Extension Resources 段、列出 templateId / uriTemplate。改了 manifest 不一定对已有会话立即生效——安装快照与自动重建/新建会话的刷新语义见 [AGENT-INTEGRATION.md](AGENT-INTEGRATION.md) §5。

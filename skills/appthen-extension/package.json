@@ -1,7 +1,7 @@
 {
   "name": "appthen-extension",
   "version": "0.1.0",
-  "description": "Develop, debug, validate, package, publish, and review AppThen Workbench extensions. Use this skill for extension-workspace, manifest.json, activate(ctx), Sidebar/Editor views, themes, dialogs, drawers, mobile layouts, CDN publishing, tenant installation, or Workbench mounting.",
+  "description": "Develop, debug, validate, package, publish, and review AppThen Workbench extensions, including agent-facing capability declarations (MCP connectors, domain resources, message cards, skills). Use this skill for extension-workspace, manifest.json, activate(ctx), Sidebar/Editor views, themes, dialogs, drawers, mobile layouts, CDN publishing, tenant installation, or Workbench mounting.",
   "keywords": ["appthen", "workbench", "extension", "skill"],
   "license": "MIT",
   "files": [
