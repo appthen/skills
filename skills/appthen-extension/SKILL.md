@@ -1,11 +1,13 @@
 ---
 name: appthen-extension
-description: 当用户想在 AppThen 工作台里"加一个功能、工具、面板、小插件"，想把已有界面/能力打包成可安装、可发布的扩展，或要把业务模块接给数字成员（agent 可用的 MCP 连接器、领域资源、消息卡片、领域技能）时，使用本技能。典型用户说法："帮我在工作台里加个 XX 功能""做一个侧边栏工具""把这个功能做成能安装的扩展""让 agent 能查/操作我们模块的数据"。用户不需要懂代码或文件结构，交付即可安装、可发布的功能。
+description: 当用户想在 AppThen 工作台里"加一个功能、工具、面板、小插件"，想把已有界面/能力打包成可安装、可发布的扩展，或要把业务模块接给数字成员（连接器、领域资源、消息卡片、领域技能；连接器即 MCP 协议的远端服务）时，使用本技能。典型用户说法："帮我在工作台里加个 XX 功能""做一个侧边栏工具""把这个功能做成能安装的扩展""让 agent 能查/操作我们模块的数据"。用户不需要懂代码或文件结构，交付即可安装、可发布的功能。
 ---
 
 # AppThen Extension Development
 
 Use this skill to take an AppThen Workbench extension from local development through a verifiable package and deployment flow. The canonical detailed specification is [PLUGIN_DEV.md](docs/PLUGIN_DEV.md); the runnable reference workspace is [examples/extension-workspace](examples/extension-workspace).
+
+**Unsure which document to read? Start from [docs/INDEX.md](docs/INDEX.md)** — a scene → document routing table. AppThen does not run an external docs site, so every document a third-party team needs (including platform contract snapshots) lives inside this skill directory.
 
 ## First Decision
 
@@ -28,9 +30,10 @@ Read these files when needed:
 
 按场景渐进加载参考资料，不要把所有参考资料当成默认硬性模板：
 
+- **不确定该读哪篇、或要把技能交给第三方团队时，先读 [docs/INDEX.md](docs/INDEX.md)**：场景 → 文档 → 平台契约快照的路由表。我们**不提供对外开放的文档系统**，所以必需的契约以只读快照形式内联在 `docs/contracts/`，链路在技能目录内自洽闭环。
+- **扩展要读写自有业务后端（自有登录 / 权限 / 多身份切换）时，先读 [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md)**：先判形态（平台能力 / 用户身份透传 / 服务商代运营），再走 `ctx.auth.getAccessToken()` → 自有后端 `POST …/sso/exchange` → `GET /identity/me` 验真的链路；含多身份切换、CORS、安全红线与最小验收清单。**不要自己验平台 token 的签名，平台也没有 JWKS / introspect。**
 - **接到"把某业务系统／模块做成扩展"的需求时，先读 [docs/PRE-DEV-INTERROGATION.md](docs/PRE-DEV-INTERROGATION.md) 并跑完立项前拷问审查**：先读业务文档 → **后端代码**（实体/字段注释/枚举/**索引**/DTO）→ 现有前端 → 平台契约，再用五个拷问（该不该存在 / 有没有意义 / 缺什么 / 是不是真的 / 代价多大）产出**质疑 · 缺口 · 增量**三张清单，按 A/B/C 成本分级。**每一条意见必须带证据（文件／行号／字段名），禁止打钩式评审。** 未通过审查不得进入界面设计。
-
-- **要把扩展接给数字成员（人 ↔ agent ↔ 业务：外部 MCP 连接器 / 领域资源 / 消息卡片 / 领域技能）时，先读 [docs/AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md)**：五张声明面、平台自动组装（提示词/工具/审批/凭证全部自动，不要手写提示词）、端到端验收剧本与实测坑清单。
+- **要把扩展接给数字成员（人 ↔ agent ↔ 业务：连接器 / 领域资源 / 消息卡片 / 领域技能（连接器 = MCP 协议的远端服务））时，先读 [docs/AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md)**：五张声明面、平台自动组装（提示词/工具/审批/凭证全部自动，不要手写提示词）、端到端验收剧本与实测坑清单。
 - 实现 UI 前，读取通用质量基线 [ui-design-quality.md](../appthen-application/references/ui-design-quality.md)。
 - 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§5 视觉质量与微交互基线（含「色彩层级：不得整屏灰」门禁）、§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线、**§6.4 色调范式 —— 合规之后怎么把颜色真正用起来**）、**§7 容器语义与首屏价值（主面板＝模块 App 首页、判定式三问、槽位制、列表判据、移动端三档）同样是强制契约**。
 - 当扩展明显属于企业管理、运营后台、专业工作台或数据密集型 B2B 场景时，再读取 [references/b2b-ui-ux.md](references/b2b-ui-ux.md)。
@@ -68,6 +71,15 @@ extension-workspace/
 ├── extensions/<extension-id>/src/index.tsx
 └── themes/*.json
 ```
+
+Create a fresh workspace without cloning any repository:
+
+```bash
+pnpm dlx @appthen/vibe-workspace init extension-workspace --template full   # 5 runnable examples
+pnpm dlx @appthen/vibe-workspace init extension-workspace --template basic  # empty skeleton
+```
+
+Workspace scripts cover the daily loop only (`doctor` / `dev` / `validate` / `test` / `build` / `pack` / `publish`). The CLI also has `serve` (serve build output over HTTP for the online Workbench's local-debug override), `publish --official [--assemble]` (platform-level), `install <package-file>` (offline package install), and `assembly list|add|set|remove` (official assembly list). See [PLUGIN_DEV.md §3](docs/PLUGIN_DEV.md) for the full command surface — do not assume the scripts are the whole CLI. `serve` is **not** `dev`: `dev` starts an offline Workbench, `serve` only emits artifacts for pointing the online Workbench at your machine.
 
 Run the standard checks from the extension workspace:
 
@@ -375,13 +387,59 @@ Do not treat a successful TypeScript compile, static screenshot, or package crea
 
 ### 7. Publish, install, and mount separately
 
-Keep these operations distinct:
+Keep these operations distinct — they are **five** gates, not one:
 
-1. **Publish** uploads the artifact and updates the tenant extension record.
-2. **Install** adds a version to the tenant extension pool.
-3. **Mount** enables the extension in a specific Workbench and configures availability and permissions.
+1. **Upload candidate** — `POST /marketplace/tenants/:tenantId/extensions/publish`. The server
+   re-verifies every file (`sha256` + `size` + safe path) and the manifest **before** storing
+   anything: a tampered package is rejected with `400` here, it never reaches a browser as an
+   SRI mismatch.
+2. **List it** — `POST /marketplace/tenants/:tenantId/extensions/:appId/listing`. The market entry
+   is assembled **from the extension record**（入口地址 / 能力清单 / 凭证）, status `draft`.
+3. **Submit + platform review** — `POST /marketplace/my/resources/:resourceId/submit`
+   （扩展的 `resourceId` 就是 `appId`）→ `POST /marketplace/admin/review/:resourceId`.
+   Only approval promotes the candidate to the **running** record (`version` / `umdConfig` /
+   `manifest` / `integrity`). Uploading a new version does **not** change what users load.
+   Review requires a **platform admin** (`APPTHEN_PLATFORM_ADMIN_USER_IDS`) — a tenant
+   developer cannot self-approve, so plan for who reviews before you submit.
+   ⚠️ The whitelist matches `providerAccountKey` **verbatim** (never the phone number itself).
+   The guard looks up **all** active `casdoor` / `phone` accounts of the subject under
+   `(tenantId, subjectId)` and intersects them with the whitelist. The same subject normally has
+   two keys — `casdoor` stores `phone:<number>`, the phone channel stores the **bare number** —
+   so **one `phone:<number>` entry is enough**; the bare number is only needed when a subject never
+   used casdoor. Write both (`phone:18136000717,18136000717`) to cover both shapes; `*` allows all.
+   Config changes require a restart and the decision is cached for 60s. Self-check with
+   `GET /marketplace/platform/admin-status` — it must return
+   `{"admin":true,"reason":"configured"}`（`reason:"claim"` only means the token carries the
+   claim, **not** that the deployment whitelist works).
+4. **Install** — `POST /marketplace/resources/:resourceId/install` adds a version to the tenant
+   extension pool. Offline packages can skip the marketplace entirely:
+   `appthen-extension install <package-file> --server <url> --tenant <tenantId>`.
+5. **Mount** — enable it in a specific Workbench and configure availability and permissions.
 
-Default publishing must not silently install or mount an extension. Online publishing requires a server, tenant context, and short-lived token. Never print tokens in source, logs, commits, or final responses.
+Hard rules:
+
+- Nothing is auto-installed or auto-mounted by publishing.
+- Artifact URLs contain an **immutable version segment** (`.../<tag>/<version>/entry.js`) and are
+  served with a one-year cache. **Changed bytes ⇒ bump `manifest.version`**; re-publishing the
+  same version only refreshes new visitors while old caches keep serving stale bytes.
+- Online publishing requires a server, tenant context, and short-lived token. Never print tokens
+  in source, logs, commits, or final responses.
+
+CLI mapping (tenant path is wrapped as `pnpm run publish`; the rest are not):
+
+```bash
+APPTHEN_TOKEN="..." pnpm run publish -- --server <url> --tenant <tenantId> [--install-tenant] [--tag dev]
+APPTHEN_TOKEN="..." pnpm exec appthen-extension publish --server <url> --official [--assemble]   # platform-level, admin only
+APPTHEN_TOKEN="..." pnpm exec appthen-extension install <package-file> --server <url> --tenant <tenantId>
+pnpm exec appthen-extension assembly list|add <appId>|set <appId> --enabled <true|false>|remove <appId> --server <url>
+```
+
+⚠️ Use `pnpm run publish`, not `pnpm publish` — the latter is pnpm's own package-publishing command.
+
+- `--official` publishes platform-wide (visible to all tenants); `--assemble` also adds it to the
+  official assembly list so new tenants get it automatically. Assembled ≠ owned: once a tenant
+  **materializes** (takes over) its install record, it stops following platform updates.
+- Prefer `assembly set --enabled false` over `assembly remove` in production — reversible.
 
 ## Debugging Order
 
@@ -414,4 +472,5 @@ Before declaring an extension complete, confirm:
 - **Theme/Tailwind implementation checked** (§5.1): 使用语义主题 token，未用 `dark:` 冒充主题适配，动态 class 可被编译；有现成工具时推荐补充浅色、深色及必要的品牌主题切换验证，不因缺少工具阻塞交付。
 - **UI/UX quality baseline checked** (§5.5): 产品视觉、交互、多端适配和状态验收已完成；没有把样例扩展当成唯一模板。
 - Publish, install, and Workbench mounting were verified as separate steps.
+- **若扩展读写自有后端**：按 [BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md) §9 跑完最小验收——未登录不发请求、换票成功、**切换身份后自动重换票**、登出清会话、伪造/过期 token 401 且不泄露拓扑、并发换票幂等；密钥（AK/SK、accessSecret）**不在扩展侧出现**。
 - **若含 agent 能力面（`capabilities.*`）**：按 [AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md) §4 跑通端到端剧本——提示词自查法确认 agent 看得到 templateId / uriTemplate，MCP 取到真实数据，回卡未编造，资源可点开；失败即停，不用注入假消息伪装通过。

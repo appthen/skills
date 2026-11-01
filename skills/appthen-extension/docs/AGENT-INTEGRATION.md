@@ -39,7 +39,7 @@
 ```json
 "capabilities": {
   "permissions": [
-    { "name": "CRM 连接器", "description": "允许 daemon 直连本租户 CRM MCP server，读写客户数据；写工具需平台审批后执行" }
+    { "name": "CRM 连接器", "description": "允许 daemon 直连本租户 CRM（MCP 协议）server，读写客户数据；写工具需平台审批后执行" }
   ],
   "mcpServers": [
     {
@@ -199,9 +199,10 @@ export function CustomerCard({ data, onAction, context }: {
 
 ## 5. 生效与刷新语义（避免"我改了怎么没用"）
 
-- **安装快照**：能力声明在"安装"时固化。改 manifest 后：正式环境重新发布 + 安装；开发期重启 serve 后在「本地调试」移除 → 重新加入。**dataSchema 等字段的刷新也走这条**（定向重装）。
-- **自动重建（已实现）**：`mcpServers` 声明修订号 + 相关凭证修订号已进 `configFingerprint` ⇒ 改连接器 url/headers/审批清单或改凭证，**下一条消息自动重建会话生效**（N7 刷新链）。
-- **尚未纳入（截至 2026-10-10）**：`resources` / `cardTemplates` 的声明修订号还没进指纹 ⇒ 新装/改卡对"已经存在的旧会话"的生效时机不确定；**验收新能力时新建会话最稳**。
+- **安装快照**：能力声明在"安装"时固化。改 manifest 后有三条路：①正式环境**发新版本 + 审核转正 + 升级安装**（市场侧已支持「发现新版 → 显式升级」，见 PLUGIN_DEV §10）；②开发期重启 serve 后在「本地调试」移除 → 重新加入；③`mcpServers` / 凭证类改动**无需重装**，下一条消息自动重建（见下条）。**dataSchema 等非 mcp 字段的刷新走 ①/②**。
+- **自动重建（已实现）**：只有 **`mcpServers` 声明修订号 + 相关凭证修订号**进了 `configFingerprint`（`resolveExtensionDeclarationsRevision` / `resolveExtensionCredentialsRevision`，见 `src/modules/conversation-runtime/resolved-runtime-config.service.ts`）⇒ 改连接器 url/headers/env/审批清单或改凭证，**下一条消息自动重建会话生效**（N7 刷新链）。
+- **尚未纳入（2026-11-01 复核仍为真）**：`resources` / `cardTemplates` / `skills` 的声明修订号**仍不在指纹**（上面那个函数只哈希 `capabilities.mcpServers`）⇒ 新装/改卡/改技能对"已经存在的旧会话"的生效时机不确定；**验收新能力时新建会话最稳**。
+- **安装参数 ≠ 声明变更**：市场安装可按租户传 `config`（如对接标识），后续用 `PATCH /marketplace/my/installs/:resourceId/config` 浅合并更新（`null` 删键），**不触发重新物化**、也不改扩展声明本身。
 
 ## 6. 前端工具与 MCP Apps（另一条轨，按需）
 

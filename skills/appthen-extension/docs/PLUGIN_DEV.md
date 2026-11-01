@@ -2,7 +2,9 @@
 
 这是 AppThen Workbench 外部扩展的详细规范。Agent 开发任务优先加载 `skills/appthen-extension/SKILL.md`，再按需查阅本文档；扩展开发应使用离线扩展工作区和稳定扩展契约 v1，不再使用旧的 `src/modules` 插件流程。
 
-宿主或扩展变更的回归验收统一参考 [`docs/EXTENSION-RUNTIME-REGRESSION.md`](docs/EXTENSION-RUNTIME-REGRESSION.md)。
+**不知道先看哪篇**：从 [INDEX.md](INDEX.md)（场景路由表）进。接自有后端（换票 / 多身份）见 [BACKEND-INTEGRATION.md](BACKEND-INTEGRATION.md)。
+
+宿主或扩展变更后的回归验收，以 [SKILL.md](../SKILL.md) 的 **Completion Checklist** 加本文 §10 的五道门为准（发布 / 安装 / 挂载是三个独立动作）。
 
 ## 1. 快速开始
 
@@ -15,7 +17,7 @@ pnpm doctor
 pnpm dev
 ```
 
-如果使用已发布的 CLI：
+如果使用已发布的 CLI（无需先克隆任何仓库）：
 
 ```bash
 pnpm dlx @appthen/vibe-workspace init extension-workspace --template full
@@ -23,6 +25,10 @@ cd extension-workspace
 pnpm install
 pnpm dev
 ```
+
+- `--template full` 生成 5 个示例扩展（侧边栏 / 多视图 / 前端工具 / Workbench Kit / remote-html 沙箱），`--template basic` 只生成空骨架。**新团队建议先 `full` 跑通再删样例**。
+- 包内只有一个可执行入口，名为 `appthen-extension`。`pnpm dlx @appthen/vibe-workspace <子命令>` 会直接调用它；工作区安装依赖后本地等价于 `pnpm exec appthen-extension <子命令>`（`package.json` 的 scripts 已封装常用命令）。
+- 自检：`pnpm dlx @appthen/vibe-workspace --help` 应打印完整命令面（与 §3 一致）。
 
 `pnpm install` 是首次准备依赖的步骤。依赖缓存准备好后，`dev`、`validate`、`test`、`build` 和 `pack` 不依赖 marketplace，可以离线完成。
 
@@ -51,18 +57,68 @@ SDK 的 `dist` 同时包含运行时代码和 `dist/vibe-workspace.css`。两者
 extension-workspace/
 ├── AGENTS.md
 ├── README.md
-├── package.json
-├── appthen-extension-workspace.json
+├── package.json                      # 7 个标准脚本，见 §3
+├── appthen-extension-workspace.json  # 工作区配置，见下表
 ├── extensions/
 │   └── acme.example/
 │       ├── manifest.json
 │       └── src/index.tsx
-└── themes/
+├── themes/
+│   └── acme-sales.json               # 本地主题定义（离线开发用）
+└── .appthen/                         # 构建产物与本地调试产物（不要提交）
+    ├── build/
+    ├── packages/                     # pack 产出的 .appthen-extension.json
+    └── dev-workbench/                # dev 生成的本地 Workbench 宿主工程
 ```
 
-一个工作区可以同时开发多个扩展。每个 `extensions/*/manifest.json` 都是一个独立扩展入口。
+一个工作区可以同时开发多个扩展。每个 `extensions/*/manifest.json` 都是一个独立扩展入口；`dev` 会扫描**整个目录**，所以「新增一个扩展」只需要新建目录，不用改配置（除非你想限制加载哪些）。
+
+### `appthen-extension-workspace.json` 全字段
+
+`init --template full` 生成的文件原样如下（可据此对照自己工作区缺了什么）：
+
+```json
+{
+  "extensionsDir": "extensions",
+  "themeCatalog": [],
+  "devWorkbench": {
+    "tenantId": "local-tenant",
+    "workbenchId": "local-extension-dev",
+    "name": "Local Extension Dev",
+    "theme": "acme.sales",
+    "enabledExtensionIds": [
+      "acme.workbench-kit",
+      "acme.sidebar-basic",
+      "acme.remote-html-sandbox",
+      "acme.frontend-tool-basic",
+      "acme.multi-view-basic"
+    ]
+  },
+  "actor": {
+    "subjectId": "local-subject",
+    "subjectClassId": "developer",
+    "userId": "local-user",
+    "role": "admin"
+  }
+}
+```
+
+| 键 | 作用 | 缺省行为 | 什么时候必须改 |
+|---|---|---|---|
+| `extensionsDir` | 扩展源码目录（相对工作区根） | `extensions` | 想用 `packages/` 等别的目录名，或工作区里放了别的子工程 |
+| `themeCatalog` | 本地主题定义数组（也可直接用 `themes/*.json`） | `[]`，只加载 `themes/` 目录 | 主题不从文件加载、要内联进配置时 |
+| `devWorkbench.tenantId` / `workbenchId` / `name` | 本地 Workbench 的租户与工作台标识 | `local-tenant` / `local-extension-dev` | 要把扩展挂到真实租户的调试上下文时 |
+| `devWorkbench.theme` | 默认主题 id | `acme.sales` | 换默认外观、验证主题联动 |
+| `devWorkbench.enabledExtensionIds` | 只加载这些扩展 id | 空数组 = 加载 `extensions/` 下全部 | 示例太多、想只跑自己那一个 |
+| `actor.subjectId` / `subjectClassId` / `userId` / `role` | 离线 Workbench 的**假 actor**（`ctx.auth.getActor()` 返回它） | 见上例 | 扩展按主体类型/角色分支时，要造出对应身份 |
+
+`actor` 是离线环境专用的：它让扩展在**不登录真实平台**的情况下拿到可预测的 actor。切换到真实 Workbench 后，`ctx.auth.getActor()` 返回的是真实主体，不要在扩展里写死「`actor.role === 'admin'` 就显示管理面板」——真实主体的 role 取值不由你控制（见 [BACKEND-INTEGRATION.md](BACKEND-INTEGRATION.md) §8）。
+
+> 主题属于 Workbench 配置，**不属于扩展激活副作用**。扩展只消费主题 token（`var(--workbench-*)` 等），不要在代码里切换主题。
 
 ## 3. 标准命令
+
+工作区 `package.json` 只封装 7 个**日常**脚本：
 
 ```bash
 pnpm doctor       # 检查依赖、配置、扩展和标准脚本
@@ -71,6 +127,7 @@ pnpm validate     # 校验所有 Manifest 和扩展 ID
 pnpm test         # 本地 smoke test：校验、构建、打包、入口和完整性
 pnpm build        # 构建 UMD 运行时产物
 pnpm pack         # 生成 .appthen-extension.json 包
+pnpm run publish  # 发布（参数见 §10）。⚠️ 必须带 run：`pnpm publish` 是 pnpm 自己的发包命令
 ```
 
 可以通过扩展 ID 只操作一个扩展：
@@ -80,6 +137,32 @@ pnpm test -- acme.example
 pnpm build -- acme.example
 pnpm pack -- acme.example
 ```
+
+### 完整命令面（CLI 全量，含未封装进 scripts 的）
+
+`appthen-extension`（= `pnpm dlx @appthen/vibe-workspace`，见 §1）：
+
+| 命令 | 关键参数 | 用途 | 工作区有脚本？ |
+|---|---|---|---|
+| `init [dir]` | `--id <app.id>`、`--template basic\|full` | 生成新工作区 | ✗（一次性） |
+| `doctor` | `--json` | 依赖 / 配置 / 扩展 / 脚本自检 | ✅ `pnpm doctor` |
+| `dev` | `--port 5177`、`--no-watch`、`--package-root <dir>` | 离线 Workbench + HMR | ✅ `pnpm dev` |
+| `validate` | — | 校验全部 manifest 与扩展 ID 唯一性 | ✅ `pnpm validate` |
+| `test [extensionId]` | — | 校验 → 构建 → 打包 → 入口与完整性 smoke | ✅ `pnpm test` |
+| `build [extensionId]` | `--package-root <dir>` | 构建 UMD 产物（含 `cssFiles`） | ✅ `pnpm build` |
+| `serve [extensionId]` | `--port 5178`、`--no-watch` | 以 HTTP 提供构建产物，**给在线工作台的「本地调试」覆盖用** | ✗（调试期手动跑） |
+| `pack [extensionId]` | `--out .appthen/packages` | 生成 `.appthen-extension.json` 包 | ✅ `pnpm pack` |
+| `publish [extensionId]` | `--server --tenant [--install-tenant] [--tag] [--token] [--skip-build]` | 发布到**某个租户** | ✅ `pnpm run publish` |
+| `publish [extensionId]` | `--server --official [--assemble] [--tag] [--token]` | 发布**平台级 / 官方**扩展（需平台管理员） | ✗（用 `pnpm exec`） |
+| `install <package-file>` | `--server --tenant [--workbench] [--token]` | 把**离线包文件**直接装进租户扩展池 | ✗ |
+| `assembly list` / `add <appId>` / `set <appId> --enabled` / `remove <appId>` | `--server [--token]`、`--note` | 维护**官方装配清单**（平台管理员） | ✗ |
+
+这几条容易误解，先记住边界：
+
+- **`serve` ≠ `dev`**：`dev` 起一个完整的离线 Workbench；`serve` 只吐构建产物，用来把**线上工作台**指向你的本机（扩展中心「本地调试」）。两者都会打印实际端口（端口被占用时自动顺延），**务必用打印出来的那个**。
+- **`publish` 默认只上传**，不安装、不挂载（见 §10 五道门）。
+- **`install <package-file>` 是离线包安装**：不经过市场、不给别的租户看，适合外包交付或内网批量分发。
+- **`--assemble` 是新租户自动拥有**：进装配清单后所有租户默认可见，直到该租户接管自己的安装记录。慎用。
 
 ## 4. Manifest v1
 
@@ -104,7 +187,7 @@ pnpm pack -- acme.example
 }
 ```
 
-`mcp` 块用于 MCP Apps / 前端工具；**agent 能力面（外部 MCP 连接器、领域资源、消息卡片、领域技能、权限说明）统一走 `capabilities` 块**——声明后由平台自动聚合注入数字成员，无需手写提示词。字段、样例与端到端验收见 [AGENT-INTEGRATION.md](AGENT-INTEGRATION.md)。
+`mcp` 块用于 MCP Apps / 前端工具；**agent 能力面（连接器、领域资源、消息卡片、领域技能、权限说明）统一走 `capabilities` 块**——声明后由平台自动聚合注入数字成员，无需手写提示词。字段、样例与端到端验收见 [AGENT-INTEGRATION.md](AGENT-INTEGRATION.md)。
 
 稳定字段：
 
@@ -293,8 +376,8 @@ const link = ctx.links.createAbsolute({
 - 优先从 `@appthen/vibe-workspace/overlay` 引入共享组件。
 - 基础 UI 从 `@appthen/vibe-workspace/ui` 引入 `Workbench` 前缀组件；不要从 `src/components/ui` 或其他宿主内部路径导入。
 - 面向 Coding 风格的企业协作扩展可从 `@appthen/vibe-workspace/coding-kit` 引入 `Coding*` primitives/patterns，并同时引入 `@appthen/vibe-workspace/styles.css`，在业务根节点使用 `.coding-kit`。
-- 公共组件、模板和验证标准以 [`docs/UI-CONTRACT.md`](docs/UI-CONTRACT.md) 为准，Workbench Kit 负责提供可运行示例。
-- 控件高度吃平台默认档：Button/Input/Select 默认 32px（工作台密集 UI 尺度，平台 Chrome 为 28px），需要更大时显式 `size="lg"`（40px）。不要在扩展 CSS 里写全局控件高度覆盖；完整尺度体系与主题变量规则见 [`docs/UI-CONTRACT.md`](docs/UI-CONTRACT.md)。
+- 公共组件、模板和验证标准以 [`UI-CONTRACT.md`](UI-CONTRACT.md) 为准，Workbench Kit 负责提供可运行示例。
+- 控件高度吃平台默认档：Button/Input/Select 默认 32px（工作台密集 UI 尺度，平台 Chrome 为 28px），需要更大时显式 `size="lg"`（40px）。不要在扩展 CSS 里写全局控件高度覆盖；完整尺度体系与主题变量规则见 [`UI-CONTRACT.md`](UI-CONTRACT.md)。
 - `WorkbenchDrawerContent side="right"` 在桌面端从右侧打开，在移动端默认切换为底部半屏；只有确有需要时才通过 `mobileSide` 覆盖方向。
 - 抽屉内容区使用 `min-h-0 flex-1 overflow-y-auto`，标题和操作区保持 `shrink-0`，避免内容挤出边界。
 - 表单字段组和操作按钮组必须显式使用 `gap-2` / `gap-3` / `gap-4`；不要依赖相邻元素默认产生间距。
@@ -316,11 +399,39 @@ const link = ctx.links.createAbsolute({
 
 ## 10. 发布、安装和挂载
 
-这三个动作是不同的：
+这几步是不同的动作（**上传 ≠ 上线 ≠ 安装 ≠ 挂载**）：
 
-1. **发布**：上传 CDN 并更新租户扩展记录。
-2. **安装**：把某个版本加入租户扩展池。
-3. **挂载**：在具体 Workbench 配置中选择扩展，并配置可用范围和权限。
+1. **上传候选产物** —— `POST /marketplace/tenants/:tenantId/extensions/publish`
+   （平台级/官方走 `POST /marketplace/platform/extensions/publish`）。
+   服务端上传前逐文件校验 `sha256` + `size` + 安全路径 + manifest：**包被篡改在这里就 400**，
+   不会等到浏览器侧 SRI 不匹配才暴露。
+2. **上架为市场条目** —— `POST /marketplace/tenants/:tenantId/extensions/:appId/listing`。
+   条目内容全部从扩展记录组装（入口地址 / 能力清单 / 凭证），产出 `status=draft`。
+   ⚠️ 通用建条目路由（`POST /marketplace/my/resources`）会生成**随机 resourceId**，
+   与扩展链路要求的 `resourceId === appId` 对不上 ⇒ 扩展**必须**走 listing 这条正门。
+3. **提交 + 平台审核** —— `POST /marketplace/my/resources/:resourceId/submit`（扩展的
+   `resourceId` 即 `appId`）后由 `POST /marketplace/admin/review/:resourceId` 放行；
+   审核方必须是**平台管理员**（`APPTHEN_PLATFORM_ADMIN_USER_IDS` 白名单），租户开发者不能自己给自己转正。
+   ⚠️ 白名单是**逐字**匹配账号库里的 `providerAccountKey`，不是匹配手机号本身。平台侧的实际判定
+   （`src/modules/subject-directory/guards/platform-admin.guard.ts`）是：按 `(tenantId, subjectId)`
+   取出该主体的**全部** `casdoor` / `phone` 且 `status=active` 账号，再与白名单取交集。
+   同一主体通常同时挂着两条 —— `provider=casdoor / key=phone:<号码>` 与 `provider=phone / key=<裸号码>`
+   （这是设计的双写，不是脏数据），所以**配 `phone:<号码>` 一条就够**；裸号码只在「该主体从未用过
+   casdoor、只有短信通道账号」时才必需。要覆盖这两种情况就写成两条：
+   `APPTHEN_PLATFORM_ADMIN_USER_IDS=phone:18136000717,18136000717`（`*` 表示全放行）。
+   自检：用该账号请求 `GET /marketplace/platform/admin-status`，必须看到
+   `{"admin":true,"reason":"configured"}` —— `reason:"claim"` 只说明 token 自带平台管理员声明，
+   **不代表白名单真的配对**（前者能测通审核、后者才是部署事实）。
+   ⚠️ 白名单与租户无关：同一号码在不同租户下是**不同主体**，但 key 相同 ⇒ 一条配置覆盖全部租户；
+   改完配置要**重启**，且判定结果有 60s 内存缓存。
+   **只有审核通过才把候选产物转成运行中产物**（`version` / `umdConfig` / `manifest` /
+   `integrity` 四个运行字段才切换）；上传新版本本身**不会**改变用户实际加载的字节。
+4. **安装** —— `POST /marketplace/resources/:resourceId/install`，把某个版本加入租户扩展池。
+5. **挂载** —— 在具体 Workbench 配置中选择扩展，并配置可用范围和权限。
+
+产物 URL 形如 `…/<tag>/<version>/entry.js`，**版本段不可变**，且响应带一年期缓存：
+**改了字节就必须升 `manifest.version`**。同版本重发布只对"没缓存过这个 URL 的访客"生效，
+老访客与沿途缓存仍按旧字节，表现为 `200` 但 `Failed to load CSS`（见工程问题池 §15.1）。
 
 默认发布不会自动安装和挂载：
 
@@ -342,6 +453,45 @@ APPTHEN_TOKEN="..." pnpm run publish -- \
 ```
 
 `--workbench` 是单工作台隔离的兼容路径，默认租户流程不要使用。Token 只通过环境变量或安全凭证注入，不要写入代码、Manifest、README 或提交记录。
+
+### 平台级 / 官方发布
+
+官方扩展不是「某个租户的扩展」，走另一条门（需要平台管理员身份）：
+
+```bash
+APPTHEN_TOKEN="..." pnpm exec appthen-extension publish \
+  --server http://127.0.0.1:1626 \
+  --official \
+  --tag stable
+```
+
+- `--official`：发布到平台级，**所有租户可见**，不需要 `--tenant`。
+- `--assemble`：同时把它加入**官方装配清单**，新租户自动拥有、无需手动安装。用于「平台自带能力」，不要用它绕过审核。
+- 官方装配后的租户接线只有两种：**装配（虚拟，跟随平台更新）** 与 **接管（已物化，脱离平台更新）**。接管后平台再发新版，该租户**不会**自动升级。
+
+### 官方装配清单维护
+
+```bash
+pnpm exec appthen-extension assembly list --server <url> --token <token>
+pnpm exec appthen-extension assembly add acme.example --note "平台自带" --server <url> --token <token>
+pnpm exec appthen-extension assembly set acme.example --enabled false --server <url> --token <token>
+pnpm exec appthen-extension assembly remove acme.example --server <url> --token <token>
+```
+
+`set --enabled false` 是**下线**（保留记录、停用装配），`remove` 是**移除**（该扩展不再自动出现在新租户里）。生产环境优先用 `set --enabled false`，可回滚。
+
+### 离线包安装（不走市场）
+
+```bash
+APPTHEN_TOKEN="..." pnpm exec appthen-extension install \
+  .appthen/packages/acme.example-0.1.0.appthen-extension.json \
+  --server http://127.0.0.1:1626 \
+  --tenant "tenant-id"
+```
+
+- 适合外包交付、内网批量分发、CI 直装。
+- 加 `--workbench <workbenchId>` 只装到单个工作台（隔离路径，默认别用）。
+- 离线安装**同样受版本规则约束**：同版本重装不刷新已缓存的产物 URL（见本节首段「产物 URL 形如…」）。
 
 ## 11. Definition of Done
 
