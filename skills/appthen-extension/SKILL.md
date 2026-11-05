@@ -34,7 +34,7 @@ Read these files when needed:
 - **扩展要读写自有业务后端（自有登录 / 权限 / 多身份切换）时，先读 [docs/BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md)**：先判形态（平台能力 / 用户身份透传 / 服务商代运营），再走 `ctx.auth.getAccessToken()` → 自有后端 `POST …/sso/exchange` → `GET /identity/me` 验真的链路；含多身份切换、CORS、安全红线与最小验收清单。**不要自己验平台 token 的签名，平台也没有 JWKS / introspect。**
 - **接到"把某业务系统／模块做成扩展"的需求时，先读 [docs/PRE-DEV-INTERROGATION.md](docs/PRE-DEV-INTERROGATION.md) 并跑完立项前拷问审查**：先读业务文档 → **后端代码**（实体/字段注释/枚举/**索引**/DTO）→ 现有前端 → 平台契约，再用五个拷问（该不该存在 / 有没有意义 / 缺什么 / 是不是真的 / 代价多大）产出**质疑 · 缺口 · 增量**三张清单，按 A/B/C 成本分级。**每一条意见必须带证据（文件／行号／字段名），禁止打钩式评审。** 未通过审查不得进入界面设计。
 - **要把扩展接给数字成员（人 ↔ agent ↔ 业务：连接器 / 领域资源 / 消息卡片 / 领域技能（连接器 = MCP 协议的远端服务））时，先读 [docs/AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md)**：五张声明面、平台自动组装（提示词/工具/审批/凭证全部自动，不要手写提示词）、端到端验收剧本与实测坑清单。
-- 实现 UI 前，读取通用质量基线 [ui-design-quality.md](../appthen-application/references/ui-design-quality.md)。
+- 实现 UI 前，读取通用质量基线 [ui-design-quality.md](references/ui-design-quality.md)。
 - 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§5 视觉质量与微交互基线（含「色彩层级：不得整屏灰」门禁）、§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线、**§6.4 色调范式 —— 合规之后怎么把颜色真正用起来**）、**§7 容器语义与首屏价值（主面板＝模块 App 首页、判定式三问、槽位制、列表判据、移动端三档）**、**§9 字号下限（12px 硬约束，8/9/10/11px 一律禁止）**、**§10 样式体量预算（建议项，不阻断；给出允许写 CSS 的四类归因）**、**§12 列表：Table 在窄容器必须退化成 card list（`<Table cardMode>` + `TableCell label`）**（先读 §8 的「硬约束 vs 建议」判定原则） 全部是强制契约。
 - 当扩展明显属于企业管理、运营后台、专业工作台或数据密集型 B2B 场景时，再读取 [references/b2b-ui-ux.md](references/b2b-ui-ux.md)。
 - **用户显式点名使用 B2B 规范/后台风格时视为强匹配**：读取后结构范式与视觉表达（KPI 统计卡、状态 tag、图表套路、主色贯穿）都要落实，实现后对照其自检清单检查，不要降级成"只保证结构可用"。
@@ -210,7 +210,7 @@ Themes belong to Workbench configuration. For offline development, define them i
 
 ### 5.5 UI/UX Quality Baseline（质量基线，不是视觉模板）
 
-即使禁止参考已有扩展，扩展 UI 也必须认真考虑产品级视觉与交互。**写 UI 前**先读 [ui-design-quality.md](../appthen-application/references/ui-design-quality.md)，**提交前**用下方清单自检。清单用于避免低质量默认产物，不要求所有扩展复刻同一套风格；业务、用户和 Agent 的设计判断优先。
+即使禁止参考已有扩展，扩展 UI 也必须认真考虑产品级视觉与交互。**写 UI 前**先读 [ui-design-quality.md](references/ui-design-quality.md)，**提交前**用下方清单自检。清单用于避免低质量默认产物，不要求所有扩展复刻同一套风格；业务、用户和 Agent 的设计判断优先。
 
 **实现默认路径**——把这个项目当普通 `shadcn + Tailwind` 项目来写，优先使用共享组件和 Tailwind utility classes；同时必须遵守下方的主题联动规则。
 

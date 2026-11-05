@@ -14,7 +14,7 @@
 |---|---|---|---|---|
 | **A 只用平台能力** | 平台 | 不写后端 | 面板展示平台数据；业务数据以「连接器」暴露给数字成员 | ✗ → 见 [SKILL.md](../SKILL.md) §2.5、[AGENT-INTEGRATION.md](AGENT-INTEGRATION.md) |
 | **B 用户身份透传（最常见）** | 你的后端（信任来源 = 平台 token） | 一个换票接口 + 一次 `/identity/me` | 员工登录工作台后，用**自己的权限**直接看业务数据 | ✅ |
-| **C 服务商代运营（机器身份）** | 平台（AK/SK → platform token） | `@appthen/sdk-node` | 你的 SaaS 后台侧批量为租户开通、同步成员、发通知 | ✗ → 见 `appthen-platform-sdk` 技能 + [contracts/service-provider-platform-api.md](contracts/service-provider-platform-api.md) |
+| **C 服务商代运营（机器身份）** | 平台（AK/SK → platform token） | `@appthen/sdk-node` | 你的 SaaS 后台侧批量为租户开通、同步成员、发通知 | ✗ → 见 `appthen-platform-sdk` 技能 + [contracts/service-provider-platform-api.md](../docs/contracts/service-provider-platform-api.md) |
 
 **B 与 C 不要混用**：B 的 token 代表「**某个人**在某个租户下」；C 的 token 代表「**你的服务商身份**被某个租户授权」。把 C 的 `accessSecret` 放进前端 = 事故。
 
