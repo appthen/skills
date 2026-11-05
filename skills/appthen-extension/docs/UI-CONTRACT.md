@@ -18,12 +18,8 @@
 2. 允许组件级 scoped 样式（BEM 私有前缀 class，如 `.crm-viewtoggle__btn`）；分段控件等特殊部件可以小于默认档但不低于 24px。
 3. 不要改 `html` 的 font-size（rem 基准固定 16px）；不要在扩展里引入第二套 Tailwind 配置。
 4. shadcn 上游的 `h-10`（40px）是网页/门户尺度，不要假设控件默认是 40px，也不要为对齐旧稿把默认档改回去。
-5. ⚠️ **已知缺口：`SimpleSelect` 触发器默认 36px，与 `Input` 的 32px 不一致**（2026-11 实测：同一表单行并排时底部错 4px，`getBoundingClientRect` 分别为 32 / 36，padding 为 `4px 12px` / `8px 12px`）。两种处理：
-   - 扩展侧临时拉齐（唯一允许的高度覆盖，须注明原因并限定作用域）：
-     ```css
-     .my-drawer [role='combobox'] { height: 32px; padding-top: 4px; padding-bottom: 4px; }
-     ```
-   - 正解是**上报 SDK 把 SimpleSelect 默认档改成 32px**，与其他控件一致；本条待修复后删除。
+5. **同排控件高度一致（硬约束，2026-11-05 内容运营扩展实证）**：同一行 / 同一工具条内的 Input、Select、Button 高度必须相同——默认全部 32px。组件的 `sm` 档是 28px，**只允许在同排所有控件统一为 28px 时整排使用**，禁止 28px 与 32px 混排（`SimpleSelect size="sm"` 并排 `Input h-8` 会差 4px，用户一眼可见）。筛排/工具条的判定方法：数一遍该 flex 行内每个交互控件的实际高度，全部相等才算过。
+6. ~~已知缺口：`SimpleSelect` 触发器默认 36px 与 Input 32px 不一致~~ **已修复**：SDK 0.1.12+ 的 SimpleSelect 默认档为 `h-8 text-sm`（32px），与 Input 一致；`sm` 档为 `h-7 text-xs`（28px），按上一条规则整排使用。
 
 ## 2. 主题变量
 
@@ -76,6 +72,15 @@
 
 - 需要「表头/筛选固定、只有表格滚」时，根用 `flex h-full min-h-0 flex-col`，滚动交给表格容器 `min-h-0 flex-1 overflow-auto`，其余子项 `shrink-0`。
 - 表单字段组和按钮组显式 `gap-2` / `gap-3`；输入控件必须 `min-width: 0; max-width: 100%`。
+- **页签行（胶囊 `TabsList`）不得贴死相邻分隔线（硬约束，2026-11-05 内容运营扩展实证）**：胶囊是整块灰底，贴 border 就变成"两条线挤在一起"，用户一眼可见。配方（CRM 与内容运营两次实测收敛）：
+
+  ```tsx
+  // 容器：页签上下各留 12px 呼吸；分隔线到下方内容也是 12px —— 三段同一节奏
+  <div className="flex flex-col gap-2 border-b border-border px-4 pb-3 pt-3">…<TabsList>…</div>
+  // 内容区顶部对齐：contentClassName="gap-3 px-4 pb-4 pt-3"（pt-3 = 12px，勿用 p-4 的 16px）
+  ```
+
+  反例即本次事故：容器 `pb-0`（下划线页签时代的贴边写法，胶囊形态下直接贴死）。自查方法：量「分隔线→胶囊」与「胶囊→下一节」两个实际间距，必须相等（或有意不对称并有理由）。
 
 ## 4. 表单
 

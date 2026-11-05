@@ -473,6 +473,8 @@ Before declaring an extension complete, confirm:
 - Reopening the same resource does not create duplicate tabs.
 - Copied URLs restore the extension and resource after refresh.
 - Desktop, narrow tablet, and phone layouts were checked.
+- **同排控件高度一致**（UI-CONTRACT §1 规则 6）：数一遍每个工具条/筛排 flex 行内每个交互控件的实际高度（Input/Select/Button），全部相等（默认 32px）才算过；`sm`（28px）只允许整排统一降档，禁止混排。
+- **页签不贴线**（UI-CONTRACT §3）：胶囊 `TabsList` 与相邻分隔线、分隔线与下一节内容三个间距同一节奏（配方 12px），`pb-0` 贴边写法不合格。
 - Dialogs, drawers, forms, icons, themes, loading, empty, and error states follow the host contract.
 - **容器语义检查**（UI-CONTRACT §7）：主面板是模块 App 首页而非入口菜单页；首屏三问（有真实状态 / 有直达动作 / 零假入口）全过；**主面板每一节过了 §7.7 四问**（谓词 / 动作必过，增量 / 命中加分——固定前 N 条的"已启用项目"式镜像列表必删）；列表或为应用主体、或 ≤1/3 首屏且 ≤320px；降到移动端 30% 抽屉档位仍成立。
 - **Theme/Tailwind implementation checked** (§5.1): 使用语义主题 token，未用 `dark:` 冒充主题适配，动态 class 可被编译；有现成工具时推荐补充浅色、深色及必要的品牌主题切换验证，不因缺少工具阻塞交付。
