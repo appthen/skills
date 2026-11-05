@@ -29,7 +29,13 @@ const flag = (name) => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 
-const skillRoot = path.resolve(flag('--root') || path.dirname(new URL(import.meta.url).pathname), '..');
+// --root 显式指定时直接使用；未指定时从脚本位置推导（脚本位于 <技能根>/scripts/）。
+// 不要对显式 root 再做「上一级」处理——曾因此把 .qoder/skills/appthen-extension
+// 解析成 .qoder/skills，误扫相邻技能。
+const explicitRoot = flag('--root');
+const skillRoot = explicitRoot
+  ? path.resolve(explicitRoot)
+  : path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const manifestPath = flag('--manifest');
 const problems = [];
 const checkedLinks = [];
