@@ -465,6 +465,7 @@ Use host logs such as activation, registration, route restoration, and runtime-c
 
 Before declaring an extension complete, confirm:
 
+- **技能分发完整性已自检**（2026-11-05 事故教训：某落地器对含子目录的技能只落地了 SKILL.md，消费方 11 条引用全断且无报错）：`node scripts/verify-skill.mjs --root <技能目录>` 必须通过——技能内相对链接全部可解析、无跨技能相对引用（`../<其他技能>/…` 硬禁，共享内容拷贝进本技能）、`--manifest` 时文件清单与源一致。**分发技能给任何 agent/环境前必跑；安装后发现引用断链，优先怀疑落地丢树而不是文档写错。**
 - **前置审查已通过**（PRE-DEV-INTERROGATION §7）：质疑／缺口／增量三张清单齐备且**每条带证据**；C 档项已排除并登记；字段写入路径已验证；需求方对 A 档范围明确点头。
 - `pnpm doctor`, `pnpm validate`, `pnpm test`, `pnpm build`, and `pnpm pack` pass.
 - The extension runs in the offline Workbench with HMR.

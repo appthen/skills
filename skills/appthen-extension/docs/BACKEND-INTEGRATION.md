@@ -1,4 +1,4 @@
-# 对接自有后端（扩展 ↔ 你的服务端）
+| 服务商 API（形态 C） | 上游 `nest-server/docs/service-provider-platform-api.md` → 本目录 [contracts/service-provider-platform-api.md](contracts/service-provider-platform-api.md) 快照 |# 对接自有后端（扩展 ↔ 你的服务端）
 
 > 适用：扩展要读写**你自己**的业务后端（LIMS / ERP / CRM / 工单…），而不只是展示平台数据。
 > 一句话结论：**平台侧不需要任何改造**。扩展用 `ctx.auth.getAccessToken()` 取到平台 token → 你的后端拿它调一次 `GET /identity/me` 验真 → 换成你自己的会话。
@@ -262,6 +262,6 @@ async exchange(body: { appThenToken?: string }) {
 | 多身份构造与确定性排序 | `src/modules/user/user.service.ts#getMyTenantTeams` / `#selectTenantTeam` |
 | 多身份路由 | `src/modules/user/user.controller.ts`（`/user/get-my-tenants`、`/user/select-tenant-team`） |
 | 平台管理员判定（白名单逐字匹配） | `src/modules/subject-directory/guards/platform-admin.guard.ts` |
-| 服务商 API（形态 C） | `docs/service-provider-platform-api.md` → 本目录 [contracts/](contracts/) 快照 |
+| 服务商 API（形态 C） | 上游 `nest-server/docs/service-provider-platform-api.md` → 本目录 [contracts/service-provider-platform-api.md](contracts/service-provider-platform-api.md) 快照 |
 
 > 参考实现（可跑样板，非平台资产）：某 LIMS 工作台的 `shared/auth-client`（双 realm 会话）+ `extensions/acme.auth-center/src/workbenchSso.ts`（换票与身份指纹）+ 后端 `modules/appthen/{controller,service,entity}`。平台方内部可见；第三方按本文 §3–§6 自己实现即可，不必照抄其框架。

@@ -31,4 +31,4 @@
 node ../../../../scripts/audit-ui.mjs .
 ```
 
-必须 `PASS`。如果 `CSS_BUDGET` 或 `FONT_TOO_SMALL` 报错，不要调高阈值，回到 [UI-CONTRACT.md](../../../docs/UI-CONTRACT.md) §8/§9 看那行样式该由谁负责。
+必须 `PASS`。如果 `CSS_BUDGET` 或 `FONT_TOO_SMALL` 报错，不要调高阈值，回到 [UI-CONTRACT.md](../../../../docs/UI-CONTRACT.md) §8/§9 看那行样式该由谁负责。

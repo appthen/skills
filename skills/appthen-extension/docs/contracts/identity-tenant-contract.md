@@ -12,9 +12,7 @@ Updated: 2026-06-15
 
 Related decisions:
 
-- `docs/adr/0001-tenant-is-team-authority.md`
-- `docs/adr/0002-subject-compat-user-team-role.md`
-- `docs/adr/0003-client-header-is-legacy-hint.md`
+- ADR（上游 `nest-server/docs/adr/`，未随技能分发）：0001 租户即团队权威、0002 subject compat 的 user/team 角色边界、0003 client header 为遗留提示
 
 ## 1. Contract Goal
 
