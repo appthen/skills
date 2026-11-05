@@ -8,7 +8,8 @@
     "validate": "appthen-extension validate",
     "build": "appthen-extension build",
     "pack": "appthen-extension pack",
-    "publish": "appthen-extension publish"
+    "publish": "appthen-extension publish",
+    "audit:ui": "node ../../scripts/audit-ui.mjs"
   },
   "dependencies": {
     "@appthen/vibe-workspace": "^0.1.0",

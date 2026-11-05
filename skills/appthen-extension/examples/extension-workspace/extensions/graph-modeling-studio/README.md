@@ -1,3 +1,7 @@
+> ⚠️ **历史遗留示例，违反现行 UI 契约，请勿照抄。**
+> 本示例未使用任何 SDK 组件、15 行引用 `var(--vscode-*)`、49 处内联 style。
+> 正确范式见 [`../reference-crud`](../reference-crud)。
+
 # 关系图建模工作台（P3 扩展）
 
 租户在 Workbench 里可视化定义 `graphmodel/v1` schema（节点类型 + 属性/索引、边类型 + 方向/基数），

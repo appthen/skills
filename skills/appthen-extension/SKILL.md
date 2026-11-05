@@ -35,7 +35,7 @@ Read these files when needed:
 - **接到"把某业务系统／模块做成扩展"的需求时，先读 [docs/PRE-DEV-INTERROGATION.md](docs/PRE-DEV-INTERROGATION.md) 并跑完立项前拷问审查**：先读业务文档 → **后端代码**（实体/字段注释/枚举/**索引**/DTO）→ 现有前端 → 平台契约，再用五个拷问（该不该存在 / 有没有意义 / 缺什么 / 是不是真的 / 代价多大）产出**质疑 · 缺口 · 增量**三张清单，按 A/B/C 成本分级。**每一条意见必须带证据（文件／行号／字段名），禁止打钩式评审。** 未通过审查不得进入界面设计。
 - **要把扩展接给数字成员（人 ↔ agent ↔ 业务：连接器 / 领域资源 / 消息卡片 / 领域技能（连接器 = MCP 协议的远端服务））时，先读 [docs/AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md)**：五张声明面、平台自动组装（提示词/工具/审批/凭证全部自动，不要手写提示词）、端到端验收剧本与实测坑清单。
 - 实现 UI 前，读取通用质量基线 [ui-design-quality.md](../appthen-application/references/ui-design-quality.md)。
-- 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§5 视觉质量与微交互基线（含「色彩层级：不得整屏灰」门禁）、§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线、**§6.4 色调范式 —— 合规之后怎么把颜色真正用起来**）、**§7 容器语义与首屏价值（主面板＝模块 App 首页、判定式三问、槽位制、列表判据、移动端三档）同样是强制契约**。
+- 实现 UI 前，先读 [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md)：控件尺寸体系（默认 32px 档）、主题变量使用和布局断点是强制契约；§5 视觉质量与微交互基线（含「色彩层级：不得整屏灰」门禁）、§6 样式与组件技术路线（shadcn + Tailwind + SDK 组件边界、cva 变体、结构红线、**§6.4 色调范式 —— 合规之后怎么把颜色真正用起来**）、**§7 容器语义与首屏价值（主面板＝模块 App 首页、判定式三问、槽位制、列表判据、移动端三档）**、**§9 字号下限（12px 硬约束，8/9/10/11px 一律禁止）**、**§10 样式体量预算（建议项，不阻断；给出允许写 CSS 的四类归因）**、**§12 列表：Table 在窄容器必须退化成 card list（`<Table cardMode>` + `TableCell label`）**（先读 §8 的「硬约束 vs 建议」判定原则） 全部是强制契约。
 - 当扩展明显属于企业管理、运营后台、专业工作台或数据密集型 B2B 场景时，再读取 [references/b2b-ui-ux.md](references/b2b-ui-ux.md)。
 - **用户显式点名使用 B2B 规范/后台风格时视为强匹配**：读取后结构范式与视觉表达（KPI 统计卡、状态 tag、图表套路、主色贯穿）都要落实，实现后对照其自检清单检查，不要降级成"只保证结构可用"。
 - **写/改 manifest.json 的 icon 字段时，读 [references/extension-icon-spec.md](references/extension-icon-spec.md)**：viewBox 24、图形占画布 ≥75%、currentColor、无背景块。平台构建时会自动规范化（统一编码/去背景块/收紧 viewBox），但按规范产出可以零警告通过。
@@ -214,11 +214,16 @@ Themes belong to Workbench configuration. For offline development, define them i
 
 **实现默认路径**——把这个项目当普通 `shadcn + Tailwind` 项目来写，优先使用共享组件和 Tailwind utility classes；同时必须遵守下方的主题联动规则。
 
+**唯一范式**：`examples/extension-workspace/extensions/reference-crud`（**0 行 CSS、0 内联 style**，覆盖主面板 + 列表 + 详情抽屉 + 五态）。
+同目录下 `graph-modeling-studio`、`workbench-kit` 是**历史遗留**，违反现行契约（大量 `var(--vscode-*)` 与内联样式、11px 字号），**不得作为范式照抄**。
+
 - ✅ 优先使用 Tailwind utility classes 配合 shadcn 语义类:`bg-background` / `text-foreground` / `bg-primary` / `text-primary-foreground` / `bg-card` / `border-border` / `bg-muted` / `text-muted-foreground` / `bg-accent` / `text-destructive`
 - ✅ 优先直接 import 共享元件:`Button / Input / Select / Badge / Card / Dialog / Drawer / Sheet / Toast / Tooltip / Table / Tabs / EmptyState`
-- ✅ 业务专属 CSS 可以使用，适合复杂动画、伪元素、特殊排版、第三方画布或确实难以表达的定制视觉；不要为了形式主义把所有 CSS 强行改成 utility classes
+- ✅ 业务专属 CSS 可以使用，**但受 UI-CONTRACT §9 的 150 行预算约束**，且只限于四类：关系型布局（`conic-gradient` / 伪元素 / `nth-child` 重排）、宿主能力缺口补丁（收敛成一处）、reset / keyframes / 滚动条、portal 逃逸。判据不是"有没有更难表达的视觉"，而是"**每行 CSS 能否说清归属**"——说不清就说明它本该是组件或原子类。不要为了形式主义把 CSS 强行改成工具类，也不要以"业务专属"为名把设计数值（字号/间距/圆角/宽高）搬进 CSS。
+- ✅ 字号只用 12 / 14 / 16 / 20 四档（`text-xs / text-sm / text-base / text-xl`）。**12px 是硬下限**，见 UI-CONTRACT §8
+- ✅ 提交前必跑门禁：`node scripts/audit-ui.mjs <扩展目录>`，退出码非 0 不通过（字号 <12px、CSS 超预算、自定义色源、旧 token、手搓宿主组件都会被检出）
 - ❌ **不要** `#0f766e` / `rgba(...)` / `var(--vscode-*)` 等任何颜色值
-- ❌ **不要** 手写 styled `<button>` / `<input>` / `<select>`，除非业务交互确实无法由共享元件表达
+- ❌ **不要** 手写 styled `<button>` / `<input>` / `<select>` / `<table>` / `role="tablist"`，除非业务交互确实无法由共享元件表达
 
 ### 5.1 Tailwind 与主题系统联动（必须遵守）
 

@@ -1,3 +1,14 @@
+/* ============================================================================
+ * ⚠️ 历史遗留示例 —— 违反现行 UI 契约，请勿照抄。
+ *
+ * 本文件的具体问题（`node scripts/audit-ui.mjs` 可复现）：
+ *   · 4 行引用 var(--vscode-*)：宿主已提供语义 token
+ *   · 5 处内联 style：应改为原子类
+ *
+ * 正确范式：同目录 ../reference-crud（0 行 CSS、0 内联 style、字号 ≥12px）。
+ * 契约条款：docs/UI-CONTRACT.md §2 主题变量 / §6 样式路线 / §8 字号下限 / §9 体量预算。
+ * ========================================================================== */
+
 import React, { useEffect, useMemo, useState } from 'react';
 import type { PluginContext } from '@appthen/vibe-workspace/plugins/base';
 

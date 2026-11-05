@@ -10,8 +10,12 @@ pnpm dev
 
 其中包含以下本地示例扩展：
 
-- `acme.workbench-kit`：标准 Workbench 扩展起手式，展示侧边栏视图、编辑器页签、前端工具、贡献点、UI 资源、主题契约，以及基于 `@appthen/vibe-workspace/coding-kit` 的 Coding 协作模板。
-- `acme.remote-html-sandbox`：展示 `allow-scripts`、CSP 和宿主消息通信的实验性沙箱示例，用于评估后续隔离运行时，暂不建议作为生产扩展模式。
+- **`acme.reference-requests`（服务工单·范式示例）：新扩展照这个写。** 0 行独立 CSS、0 内联 style、字号 ≥12px、全部使用 SDK 组件 + Tailwind 原子类，覆盖主面板 + 列表工作区 + 详情抽屉 + 空/骨架/正常三态。契约条款见 `docs/UI-CONTRACT.md` §1 / §6 / §7 / §8 / §9。
+- `acme.workbench-kit`：**历史遗留，勿作为范式**。展示侧边栏视图、编辑器页签、前端工具、贡献点、UI 资源，以及基于 `@appthen/vibe-workspace/coding-kit` 的 Coding 协作模板；但含 113 处内联 style、40 行 `var(--vscode-*)` 引用、6 处 11px 字号，按现行契约不合格。
+- `acme.remote-html-sandbox`：**历史遗留，勿作为范式**。展示 `allow-scripts`、CSP 和宿主消息通信的实验性沙箱，用于评估隔离运行时，暂不建议作为生产扩展模式。
+- `acme.graph-modeling-studio`：**历史遗留，勿作为范式**。未使用任何 SDK 组件、全内联样式，仅作为业务复杂度的参考，不代表技术选型。
+
+> 提交前跑 UI 门禁：`node ../../scripts/audit-ui.mjs extensions/<你的扩展>`，退出码非 0 不通过。上述三个历史示例在该门禁下均为 FAIL，这是刻意保留的对照。
 
 开发命令会启动离线 Workbench，并加载所有 `extensions/*/manifest.json`。Manifest 变化会重新生成本地 Workbench 入口，源码变化使用 Vite HMR。
 

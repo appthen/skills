@@ -1,0 +1,13 @@
+{
+  "id": "acme.reference-requests",
+  "name": "服务工单（范式示例）",
+  "version": "0.1.0",
+  "manifestVersion": 1,
+  "apiVersion": "1",
+  "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Crect x='8' y='9' width='16' height='2.4' rx='1.2' fill='white'/%3E%3Crect x='8' y='15' width='16' height='2.4' rx='1.2' fill='white' opacity='.8'/%3E%3Crect x='8' y='21' width='10' height='2.4' rx='1.2' fill='white' opacity='.6'/%3E%3C/svg%3E",
+  "main": "./src/index.tsx",
+  "sourceType": "umd",
+  "runtime": {
+    "sidebarViewId": "sidebar.acme.reference-requests"
+  }
+}

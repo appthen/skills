@@ -1,3 +1,16 @@
+/* ============================================================================
+ * ⚠️ 历史遗留示例 —— 违反现行 UI 契约，请勿照抄。
+ *
+ * 本文件的具体问题（`node scripts/audit-ui.mjs` 可复现）：
+ *   · 40 行引用 var(--vscode-*) / var(--ck-*)：一律不得出现在扩展里
+ *   · 6 处 fontSize: 11：中文环境最小字号 12px，低于它会被强制放大但不撑容器
+ *   · 113 处内联 style：换了个地方写 CSS，且不可复用
+ *   · 786 行单文件：超出「单文件 > 300 行必须拆分」的结构红线
+ *
+ * 正确范式：同目录 ../reference-crud（0 行 CSS、0 内联 style、字号 ≥12px）。
+ * 契约条款：docs/UI-CONTRACT.md §2 主题变量 / §6 样式路线 / §8 字号下限 / §9 体量预算。
+ * ========================================================================== */
+
 import React, { useMemo, useState } from 'react';
 import type { ExtensionBadge, PluginContext } from '@appthen/vibe-workspace/plugins/base';
 import {

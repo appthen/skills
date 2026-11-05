@@ -1,3 +1,15 @@
+/* ============================================================================
+ * ⚠️ 历史遗留示例 —— 违反现行 UI 契约，请勿照抄。
+ *
+ * 本文件的具体问题（`node scripts/audit-ui.mjs` 可复现）：
+ *   · 15 行引用 var(--vscode-*)：宿主已提供 shadcn 语义层与 --portal-* 调色板
+ *   · 49 处内联 style：不可复用、不进主题、不能响应断点
+ *   · 全文件未使用任何 SDK 组件（只 import 了 PluginContext 类型）
+ *
+ * 正确范式：同目录 ../reference-crud（0 行 CSS、0 内联 style、字号 ≥12px）。
+ * 契约条款：docs/UI-CONTRACT.md §2 主题变量 / §6 样式路线 / §8 字号下限 / §9 体量预算。
+ * ========================================================================== */
+
 import React, { useMemo, useState } from 'react';
 import type { PluginContext } from '@appthen/vibe-workspace/plugins/base';
 
